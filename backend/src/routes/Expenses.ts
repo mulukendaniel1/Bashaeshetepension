@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../prisma";
+import { serializeDecimals } from "../utils/decimal";
 import { requireAuth, requireRoles, AuthRequest } from "../middleware/auth";
 import { UserRole } from "../generated/prisma/enums";
 
@@ -34,7 +35,7 @@ router.get("/", async (req, res, next) => {
       orderBy: { createdAt: "desc" },
     });
 
-    res.json({ success: true, expenses });
+    res.json({ success: true, expenses: serializeDecimals(expenses) });
   } catch (e) {
     next(e);
   }
@@ -49,7 +50,7 @@ router.post("/", canManageExpenses, async (req: AuthRequest, res, next) => {
       include: { recordedBy: { select: { id: true, fullName: true } } },
     });
 
-    res.status(201).json({ success: true, expense });
+    res.status(201).json({ success: true, expense: serializeDecimals(expense) });
   } catch (e) {
     next(e);
   }
@@ -63,7 +64,7 @@ router.patch("/:id", canManageExpenses, async (req, res, next) => {
       include: { recordedBy: { select: { id: true, fullName: true } } },
     });
 
-    res.json({ success: true, expense });
+    res.json({ success: true, expense: serializeDecimals(expense) });
   } catch (e) {
     next(e);
   }

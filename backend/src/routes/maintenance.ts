@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../prisma";
+import type { Prisma } from "../generated/prisma/client";
+import { serializeDecimals } from "../utils/decimal";
 import { requireAuth, requireRoles, AuthRequest } from "../middleware/auth";
 import { UserRole } from "../generated/prisma/enums";
 
@@ -38,7 +40,7 @@ router.get("/", async (req, res, next) => {
       orderBy: { createdAt: "desc" },
     });
 
-    res.json({ success: true, requests });
+    res.json({ success: true, requests: serializeDecimals(requests) });
   } catch (e) {
     next(e);
   }
@@ -48,7 +50,7 @@ router.post("/", canCreateRequests, async (req, res, next) => {
   try {
     const input = requestSchema.parse(req.body);
 
-    const request = await prisma.$transaction(async (tx) => {
+    const request = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const created = await tx.maintenanceRequest.create({
         data: { ...input, status: "OPEN" },
         include: includeRelations,
@@ -62,7 +64,7 @@ router.post("/", canCreateRequests, async (req, res, next) => {
       return created;
     });
 
-    res.status(201).json({ success: true, request });
+    res.status(201).json({ success: true, request: serializeDecimals(request) });
   } catch (e) {
     next(e);
   }
@@ -93,7 +95,7 @@ router.patch("/:id/status", async (req: AuthRequest, res, next) => {
       });
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const result = await tx.maintenanceRequest.update({
         where: { id },
         data: {
@@ -114,7 +116,7 @@ router.patch("/:id/status", async (req: AuthRequest, res, next) => {
       return result;
     });
 
-    res.json({ success: true, request: updated });
+    res.json({ success: true, request: serializeDecimals(updated) });
   } catch (e) {
     next(e);
   }
