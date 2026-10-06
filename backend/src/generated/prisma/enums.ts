@@ -131,3 +131,50 @@ export const ExpensePaymentMethod = {
 } as const
 
 export type ExpensePaymentMethod = (typeof ExpensePaymentMethod)[keyof typeof ExpensePaymentMethod]
+
+
+export const ShiftStatus = {
+  OPEN: 'OPEN',
+  CLOSED: 'CLOSED'
+} as const
+
+export type ShiftStatus = (typeof ShiftStatus)[keyof typeof ShiftStatus]
+
+
+export const BankAccountType = {
+  PENSION: 'PENSION',
+  PERSONAL: 'PERSONAL'
+} as const
+
+export type BankAccountType = (typeof BankAccountType)[keyof typeof BankAccountType]
+
+
+export const SmsTransactionType = {
+  CREDIT: 'CREDIT',
+  DEBIT: 'DEBIT',
+  OTP: 'OTP',
+  MARKETING: 'MARKETING',
+  UNKNOWN: 'UNKNOWN'
+} as const
+
+export type SmsTransactionType = (typeof SmsTransactionType)[keyof typeof SmsTransactionType]
+
+
+export const BankTransactionStatus = {
+  DETECTED: 'DETECTED',
+  UNMATCHED: 'UNMATCHED',
+  MATCHED: 'MATCHED',
+  REJECTED: 'REJECTED',
+  DUPLICATE: 'DUPLICATE',
+  REVIEW_REQUIRED: 'REVIEW_REQUIRED'
+} as const
+
+export type BankTransactionStatus = (typeof BankTransactionStatus)[keyof typeof BankTransactionStatus]
+
+
+export const SmsBridgeDeviceStatus = {
+  ACTIVE: 'ACTIVE',
+  REVOKED: 'REVOKED'
+} as const
+
+export type SmsBridgeDeviceStatus = (typeof SmsBridgeDeviceStatus)[keyof typeof SmsBridgeDeviceStatus]

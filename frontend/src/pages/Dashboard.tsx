@@ -118,7 +118,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {new Date().toLocaleDateString("en-GB", {
             weekday: "long",
             year: "numeric",
@@ -127,23 +127,23 @@ export default function Dashboard() {
           })}
         </p>
 
-        <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+        <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl dark:text-white">
           Good morning, {user?.fullName?.split(" ")[0] || "Admin"}
         </h1>
 
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
           Here is what is happening at your pension today.
         </p>
       </div>
 
       {error && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
           {error}
         </p>
       )}
 
       {loading ? (
-        <div className="rounded-2xl border border-black/5 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
+        <div className="rounded-2xl border border-black/5 bg-white p-8 text-center text-sm text-gray-500 dark:text-gray-400 shadow-sm">
           Loading dashboard...
         </div>
       ) : (
@@ -159,13 +159,13 @@ export default function Dashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.08 }}
                   whileHover={{ y: -5 }}
-                  className="group rounded-2xl border border-black/5 bg-white p-5 shadow-sm transition-shadow hover:shadow-xl"
+                  className="group rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a231d] transition-shadow hover:shadow-xl"
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-gray-500">{stat.title}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
 
-                      <p className="mt-2 text-2xl font-bold">{stat.value}</p>
+                      <p className="mt-2 text-2xl font-bold dark:text-white">{stat.value}</p>
                     </div>
 
                     <div className="rounded-xl bg-[#123c2c]/10 p-3 text-[#123c2c] transition duration-300 group-hover:scale-110 group-hover:bg-[#123c2c] group-hover:text-white">
@@ -173,18 +173,18 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <p className="mt-4 text-xs text-gray-500">{stat.detail}</p>
+                  <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">{stat.detail}</p>
                 </motion.div>
               );
             })}
           </section>
 
-          <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#1a231d]">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h3 className="font-bold">Room Status</h3>
+                <h3 className="font-bold dark:text-white">Room Status</h3>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Current room availability
                 </p>
               </div>
@@ -198,7 +198,7 @@ export default function Dashboard() {
             </div>
 
             {rooms.length === 0 ? (
-              <p className="py-8 text-center text-sm text-gray-500">
+              <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                 No rooms added yet.
               </p>
             ) : (
@@ -214,11 +214,11 @@ export default function Dashboard() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-lg font-bold">
+                        <p className="text-lg font-bold dark:text-white">
                           Room {room.roomNumber}
                         </p>
 
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {room.roomType.name}
                         </p>
                       </div>
@@ -230,7 +230,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="mt-5 flex items-center justify-between">
-                      <span className="text-sm font-semibold">
+                      <span className="text-sm font-semibold dark:text-white">
                         {room.price ? `${room.price.toLocaleString()} ETB` : "-"}
                       </span>
 

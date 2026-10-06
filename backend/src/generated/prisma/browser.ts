@@ -87,3 +87,33 @@ export type Notification = Prisma.NotificationModel
  * 
  */
 export type Setting = Prisma.SettingModel
+/**
+ * Model BankAccount
+ * 
+ */
+export type BankAccount = Prisma.BankAccountModel
+/**
+ * Model BankSmsRule
+ * 
+ */
+export type BankSmsRule = Prisma.BankSmsRuleModel
+/**
+ * Model SmsBridgeDevice
+ * 
+ */
+export type SmsBridgeDevice = Prisma.SmsBridgeDeviceModel
+/**
+ * Model BankTransaction
+ * 
+ */
+export type BankTransaction = Prisma.BankTransactionModel
+/**
+ * Model BankTransactionMatch
+ * 
+ */
+export type BankTransactionMatch = Prisma.BankTransactionMatchModel
+/**
+ * Model Shift
+ * 
+ */
+export type Shift = Prisma.ShiftModel

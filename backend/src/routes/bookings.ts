@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../prisma";
+import type { Prisma } from "../generated/prisma/client";
 import { requireAuth, requireRoles, AuthRequest } from "../middleware/auth";
+
 import { UserRole } from "../generated/prisma/enums";
 
 const router = Router();
@@ -107,7 +109,7 @@ router.post("/", canManageBookings, async (req: AuthRequest, res, next) => {
     const totalAmount = subtotal - input.discount + input.tax + input.additionalFees;
     const bookingNumber = await nextBookingNumber();
 
-    const booking = await prisma.$transaction(async (tx) => {
+    const booking = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const created = await tx.booking.create({
         data: {
           bookingNumber,
@@ -140,6 +142,12 @@ router.post("/", canManageBookings, async (req: AuthRequest, res, next) => {
 
       return created;
     });
+
+    await notify(
+      "BOOKING_CREATED",
+      "New booking created",
+      `${booking.guest.fullName} booked Room ${booking.room.roomNumber} (${booking.bookingNumber}).`
+    );
 
     res.status(201).json({ success: true, booking });
   } catch (e) {
@@ -174,7 +182,7 @@ router.patch("/:id/status", canManageBookings, async (req, res, next) => {
       NO_SHOW: "AVAILABLE",
     };
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const result = await tx.booking.update({
         where: { id: paramId(req) },
         data: { status },
@@ -193,6 +201,22 @@ router.patch("/:id/status", canManageBookings, async (req, res, next) => {
       return result;
     });
 
+    if (status === "CHECKED_IN") {
+      await notify(
+        "GUEST_CHECKED_IN",
+        "Guest checked in",
+        `${updated.guest.fullName} checked into Room ${updated.room.roomNumber}.`
+      );
+    }
+
+    if (status === "CHECKED_OUT") {
+      await notify(
+        "GUEST_CHECKED_OUT",
+        "Guest checked out",
+        `${updated.guest.fullName} checked out of Room ${updated.room.roomNumber}.`
+      );
+    }
+
     res.json({ success: true, booking: updated });
   } catch (e) {
     next(e);
@@ -209,6 +233,17 @@ const paymentSchema = z.object({
 router.post("/:id/payments", canRecordPayments, async (req: AuthRequest, res, next) => {
   try {
     const input = paymentSchema.parse(req.body);
+
+    const activeShift = await prisma.shift.findFirst({
+      where: { userId: req.user!.id, status: "OPEN" },
+    });
+
+    if (!activeShift) {
+      return res.status(409).json({
+        success: false,
+        message: "You need an open shift before recording a payment. Clock in from the Shifts page first.",
+      });
+    }
 
     const booking = await prisma.booking.findUniqueOrThrow({
       where: { id: paramId(req) },
@@ -230,6 +265,7 @@ router.post("/:id/payments", canRecordPayments, async (req: AuthRequest, res, ne
           notes: input.notes,
           bookingId: booking.id,
           receivedById: req.user!.id,
+          shiftId: activeShift.id,
         },
       }),
       prisma.booking.update({
@@ -277,3 +313,7 @@ router.delete("/:id", canManageBookings, async (req, res, next) => {
 });
 
 export default router;
+
+function notify(arg0: string, arg1: string, arg2: string) {
+  throw new Error("Function not implemented.");
+}

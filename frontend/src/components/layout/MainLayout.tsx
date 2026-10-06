@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import {
 BedDouble,
-Bell,
 CalendarCheck,
+Clock3,
+Calculator,
 ClipboardList,
 CreditCard,
 FileBarChart,
@@ -21,6 +22,7 @@ X,
 import { NavLink, Outlet } from "react-router-dom";
 import { useState } from "react";
 
+
 const navigation = [
 { name: "Dashboard", path: "/", icon: Home },
 { name: "Rooms", path: "/rooms", icon: BedDouble },
@@ -34,6 +36,8 @@ const navigation = [
 { name: "Housekeeping", path: "/housekeeping", icon: ClipboardList },
 { name: "Maintenance", path: "/maintenance", icon: Wrench },
 { name: "Staff", path: "/staff", icon: UserRound },
+{ name: "Shifts", path: "/shifts", icon: Clock3 },
+{ name: "Z Report", path: "/zreport", icon: Calculator },
 { name: "Reports", path: "/reports", icon: FileBarChart },
 ];
 
@@ -41,8 +45,8 @@ export default function MainLayout() {
 const [mobileOpen, setMobileOpen] = useState(false);
 
 return (
-<div className="min-h-screen bg-[#f6f8f6] text-[#17211b]">
-<aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-black/5 bg-white lg:block">
+<div className="min-h-screen bg-[#f6f8f6] text-[#17211b] dark:bg-[#10140f] dark:text-gray-100">
+<aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-black/5 bg-white lg:block dark:border-white/10 dark:bg-[#161d18]">
 <Sidebar />
 </aside>
 
@@ -75,7 +79,7 @@ return (
   </motion.aside>
 
   <main className="lg:ml-64">
-    <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-black/5 bg-white/90 px-5 backdrop-blur-xl lg:px-8">
+    <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-black/5 bg-white/90 px-5 backdrop-blur-xl lg:px-8 dark:border-white/10 dark:bg-[#161d18]/90">
       <div className="flex items-center gap-3">
         <button
           onClick={() => setMobileOpen(true)}
@@ -85,22 +89,18 @@ return (
         </button>
 
         <div>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             Basha Eshete Pension
           </p>
 
-          <h2 className="text-lg font-bold sm:text-xl">
+          <h2 className="text-lg font-bold sm:text-xl dark:text-white">
             Management System
           </h2>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <button className="relative rounded-xl border border-black/5 bg-white p-2.5 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:text-[#123c2c]">
-          <Bell size={19} />
-
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
-        </button>
+        
 
         <div className="hidden h-10 w-10 items-center justify-center rounded-full bg-[#d8a84e] font-bold text-white shadow-sm sm:flex">
           BE
@@ -120,7 +120,7 @@ return (
 function Sidebar() {
 return (
 <div className="flex h-full flex-col">
-<div className="border-b border-black/5 px-5 py-5">
+<div className="border-b border-black/5 px-5 py-5 dark:border-white/10">
 <Brand />
 </div>
 
@@ -138,8 +138,8 @@ return (
 </div>
 
   <div>
-    <h1 className="font-bold tracking-tight">Basha Eshete</h1>
-    <p className="text-xs text-gray-500">Pension Management</p>
+    <h1 className="font-bold tracking-tight dark:text-white">Basha Eshete</h1>
+    <p className="text-xs text-gray-500 dark:text-gray-400">Pension Management</p>
   </div>
 </div>
 
@@ -166,7 +166,7 @@ const Icon = item.icon;
           `group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
             isActive
               ? "bg-[#123c2c] text-white shadow-lg shadow-[#123c2c]/15"
-              : "text-gray-600 hover:bg-[#f1f5f2] hover:text-[#123c2c]"
+              : "text-gray-600 hover:bg-[#f1f5f2] hover:text-[#123c2c] dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
           }`
         }
       >

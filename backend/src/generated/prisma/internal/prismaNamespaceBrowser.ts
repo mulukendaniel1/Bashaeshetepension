@@ -64,7 +64,13 @@ export const ModelName = {
   MaintenanceRequest: 'MaintenanceRequest',
   AuditLog: 'AuditLog',
   Notification: 'Notification',
-  Setting: 'Setting'
+  Setting: 'Setting',
+  BankAccount: 'BankAccount',
+  BankSmsRule: 'BankSmsRule',
+  SmsBridgeDevice: 'SmsBridgeDevice',
+  BankTransaction: 'BankTransaction',
+  BankTransactionMatch: 'BankTransactionMatch',
+  Shift: 'Shift'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -193,6 +199,8 @@ export const PaymentScalarFieldEnum = {
   notes: 'notes',
   bookingId: 'bookingId',
   receivedById: 'receivedById',
+  shiftId: 'shiftId',
+  bankAccountId: 'bankAccountId',
   createdAt: 'createdAt'
 } as const
 
@@ -314,6 +322,106 @@ export const SettingScalarFieldEnum = {
 } as const
 
 export type SettingScalarFieldEnum = (typeof SettingScalarFieldEnum)[keyof typeof SettingScalarFieldEnum]
+
+
+export const BankAccountScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  bankName: 'bankName',
+  accountNumberMasked: 'accountNumberMasked',
+  accountIdentifier: 'accountIdentifier',
+  accountType: 'accountType',
+  active: 'active',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BankAccountScalarFieldEnum = (typeof BankAccountScalarFieldEnum)[keyof typeof BankAccountScalarFieldEnum]
+
+
+export const BankSmsRuleScalarFieldEnum = {
+  id: 'id',
+  bankName: 'bankName',
+  smsSender: 'smsSender',
+  enabled: 'enabled',
+  amountPattern: 'amountPattern',
+  accountPattern: 'accountPattern',
+  referencePattern: 'referencePattern',
+  datePattern: 'datePattern',
+  transactionTypePattern: 'transactionTypePattern',
+  creditKeywords: 'creditKeywords',
+  debitKeywords: 'debitKeywords',
+  bankAccountId: 'bankAccountId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BankSmsRuleScalarFieldEnum = (typeof BankSmsRuleScalarFieldEnum)[keyof typeof BankSmsRuleScalarFieldEnum]
+
+
+export const SmsBridgeDeviceScalarFieldEnum = {
+  id: 'id',
+  label: 'label',
+  tokenHash: 'tokenHash',
+  status: 'status',
+  lastIp: 'lastIp',
+  lastSeenAt: 'lastSeenAt',
+  lastSmsAt: 'lastSmsAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SmsBridgeDeviceScalarFieldEnum = (typeof SmsBridgeDeviceScalarFieldEnum)[keyof typeof SmsBridgeDeviceScalarFieldEnum]
+
+
+export const BankTransactionScalarFieldEnum = {
+  id: 'id',
+  amount: 'amount',
+  currency: 'currency',
+  transactionReference: 'transactionReference',
+  sender: 'sender',
+  smsText: 'smsText',
+  transactionType: 'transactionType',
+  transactionDate: 'transactionDate',
+  receivedAt: 'receivedAt',
+  confidence: 'confidence',
+  status: 'status',
+  fingerprint: 'fingerprint',
+  bankAccountId: 'bankAccountId',
+  deviceId: 'deviceId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BankTransactionScalarFieldEnum = (typeof BankTransactionScalarFieldEnum)[keyof typeof BankTransactionScalarFieldEnum]
+
+
+export const BankTransactionMatchScalarFieldEnum = {
+  id: 'id',
+  bankTransactionId: 'bankTransactionId',
+  paymentId: 'paymentId',
+  shiftId: 'shiftId',
+  matchedAt: 'matchedAt'
+} as const
+
+export type BankTransactionMatchScalarFieldEnum = (typeof BankTransactionMatchScalarFieldEnum)[keyof typeof BankTransactionMatchScalarFieldEnum]
+
+
+export const ShiftScalarFieldEnum = {
+  id: 'id',
+  label: 'label',
+  status: 'status',
+  openedAt: 'openedAt',
+  closedAt: 'closedAt',
+  openingCash: 'openingCash',
+  closingCash: 'closingCash',
+  notes: 'notes',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ShiftScalarFieldEnum = (typeof ShiftScalarFieldEnum)[keyof typeof ShiftScalarFieldEnum]
 
 
 export const SortOrder = {

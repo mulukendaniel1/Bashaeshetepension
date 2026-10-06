@@ -33,6 +33,7 @@ app.use("/api/maintenance", maintenanceRouter);
 app.use("/api/staff", staffRouter);
 app.use("/api/reports", ReportsRouter);
 import settingsRouter from "./routes/settings";
+import zreportRouter from "./routes/zreport";
 
 app.get("/api/health", async (_req, res) => {
   try {
@@ -48,6 +49,7 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/guests", guestRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/settings", settingsRouter);
+app.use("/api/zreport", zreportRouter);
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

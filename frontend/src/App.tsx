@@ -21,8 +21,11 @@ import Inventory from "./pages/Inventory";
 import Houskeeping from "./pages/houskeeping";
 import Maintenance from "./pages/maintenance";
 import Staff from "./pages/Staff";
+import Shifts from "./pages/Shifts";
+import ZReport from "./pages/ZReport";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import BankAccountSettings from "./pages/BankAccountSettings";
 
 export default function App() {
   return (
@@ -50,8 +53,11 @@ export default function App() {
             <Route path="/housekeeping" element={<Houskeeping />} />
             <Route path="/maintenance" element={<Maintenance />} />
             <Route path="/staff" element={<Staff />} />
+            <Route path="/shifts" element={<Shifts />} />
+            <Route path="/zreport" element={<ZReport />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/settings/bank-accounts" element={<BankAccountSettings />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

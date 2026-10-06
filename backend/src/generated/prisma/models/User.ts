@@ -294,6 +294,7 @@ export type UserWhereInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
   createdBookings?: Prisma.BookingListRelationFilter
+  shifts?: Prisma.ShiftListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -317,6 +318,7 @@ export type UserOrderByWithRelationInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
   createdBookings?: Prisma.BookingOrderByRelationAggregateInput
+  shifts?: Prisma.ShiftOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -343,6 +345,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   maintenanceRequests?: Prisma.MaintenanceRequestListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
   createdBookings?: Prisma.BookingListRelationFilter
+  shifts?: Prisma.ShiftListRelationFilter
 }, "id" | "username" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -408,6 +411,7 @@ export type UserCreateInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -431,6 +435,7 @@ export type UserUncheckedCreateInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingUncheckedCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -454,6 +459,7 @@ export type UserUpdateInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -477,6 +483,7 @@ export type UserUncheckedUpdateInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUncheckedUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -725,6 +732,20 @@ export type UserUpdateOneRequiredWithoutAuditLogsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuditLogsInput, Prisma.UserUpdateWithoutAuditLogsInput>, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
 }
 
+export type UserCreateNestedOneWithoutShiftsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutShiftsInput, Prisma.UserUncheckedCreateWithoutShiftsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutShiftsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutShiftsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutShiftsInput, Prisma.UserUncheckedCreateWithoutShiftsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutShiftsInput
+  upsert?: Prisma.UserUpsertWithoutShiftsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutShiftsInput, Prisma.UserUpdateWithoutShiftsInput>, Prisma.UserUncheckedUpdateWithoutShiftsInput>
+}
+
 export type UserCreateWithoutCreatedBookingsInput = {
   id?: string
   fullName: string
@@ -745,6 +766,7 @@ export type UserCreateWithoutCreatedBookingsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskCreateNestedManyWithoutAssignedToInput
   maintenanceRequests?: Prisma.MaintenanceRequestCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  shifts?: Prisma.ShiftCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCreatedBookingsInput = {
@@ -767,6 +789,7 @@ export type UserUncheckedCreateWithoutCreatedBookingsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskUncheckedCreateNestedManyWithoutAssignedToInput
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  shifts?: Prisma.ShiftUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCreatedBookingsInput = {
@@ -805,6 +828,7 @@ export type UserUpdateWithoutCreatedBookingsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskUpdateManyWithoutAssignedToNestedInput
   maintenanceRequests?: Prisma.MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  shifts?: Prisma.ShiftUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedBookingsInput = {
@@ -827,6 +851,7 @@ export type UserUncheckedUpdateWithoutCreatedBookingsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskUncheckedUpdateManyWithoutAssignedToNestedInput
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  shifts?: Prisma.ShiftUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPaymentsInput = {
@@ -849,6 +874,7 @@ export type UserCreateWithoutPaymentsInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPaymentsInput = {
@@ -871,6 +897,7 @@ export type UserUncheckedCreateWithoutPaymentsInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingUncheckedCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPaymentsInput = {
@@ -909,6 +936,7 @@ export type UserUpdateWithoutPaymentsInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPaymentsInput = {
@@ -931,6 +959,7 @@ export type UserUncheckedUpdateWithoutPaymentsInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUncheckedUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutExpensesInput = {
@@ -953,6 +982,7 @@ export type UserCreateWithoutExpensesInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutExpensesInput = {
@@ -975,6 +1005,7 @@ export type UserUncheckedCreateWithoutExpensesInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingUncheckedCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutExpensesInput = {
@@ -1013,6 +1044,7 @@ export type UserUpdateWithoutExpensesInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutExpensesInput = {
@@ -1035,6 +1067,7 @@ export type UserUncheckedUpdateWithoutExpensesInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUncheckedUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutHousekeepingTasksInput = {
@@ -1057,6 +1090,7 @@ export type UserCreateWithoutHousekeepingTasksInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutHousekeepingTasksInput = {
@@ -1079,6 +1113,7 @@ export type UserUncheckedCreateWithoutHousekeepingTasksInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingUncheckedCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutHousekeepingTasksInput = {
@@ -1117,6 +1152,7 @@ export type UserUpdateWithoutHousekeepingTasksInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutHousekeepingTasksInput = {
@@ -1139,6 +1175,7 @@ export type UserUncheckedUpdateWithoutHousekeepingTasksInput = {
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUncheckedUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutMaintenanceRequestsInput = {
@@ -1161,6 +1198,7 @@ export type UserCreateWithoutMaintenanceRequestsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutMaintenanceRequestsInput = {
@@ -1183,6 +1221,7 @@ export type UserUncheckedCreateWithoutMaintenanceRequestsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskUncheckedCreateNestedManyWithoutAssignedToInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   createdBookings?: Prisma.BookingUncheckedCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutMaintenanceRequestsInput = {
@@ -1221,6 +1260,7 @@ export type UserUpdateWithoutMaintenanceRequestsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMaintenanceRequestsInput = {
@@ -1243,6 +1283,7 @@ export type UserUncheckedUpdateWithoutMaintenanceRequestsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskUncheckedUpdateManyWithoutAssignedToNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   createdBookings?: Prisma.BookingUncheckedUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -1265,6 +1306,7 @@ export type UserCreateWithoutAuditLogsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskCreateNestedManyWithoutAssignedToInput
   maintenanceRequests?: Prisma.MaintenanceRequestCreateNestedManyWithoutAssignedToInput
   createdBookings?: Prisma.BookingCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -1287,6 +1329,7 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskUncheckedCreateNestedManyWithoutAssignedToInput
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
   createdBookings?: Prisma.BookingUncheckedCreateNestedManyWithoutCreatedByInput
+  shifts?: Prisma.ShiftUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -1325,6 +1368,7 @@ export type UserUpdateWithoutAuditLogsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskUpdateManyWithoutAssignedToNestedInput
   maintenanceRequests?: Prisma.MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
   createdBookings?: Prisma.BookingUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -1347,6 +1391,115 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   housekeepingTasks?: Prisma.HousekeepingTaskUncheckedUpdateManyWithoutAssignedToNestedInput
   maintenanceRequests?: Prisma.MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
   createdBookings?: Prisma.BookingUncheckedUpdateManyWithoutCreatedByNestedInput
+  shifts?: Prisma.ShiftUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutShiftsInput = {
+  id?: string
+  fullName: string
+  username: string
+  passwordHash: string
+  role?: $Enums.UserRole
+  department?: $Enums.Department | null
+  status?: $Enums.UserStatus
+  phone?: string | null
+  email?: string | null
+  salary?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  startDate?: Date | string | null
+  profileImage?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  payments?: Prisma.PaymentCreateNestedManyWithoutReceivedByInput
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutRecordedByInput
+  housekeepingTasks?: Prisma.HousekeepingTaskCreateNestedManyWithoutAssignedToInput
+  maintenanceRequests?: Prisma.MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdBookings?: Prisma.BookingCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserUncheckedCreateWithoutShiftsInput = {
+  id?: string
+  fullName: string
+  username: string
+  passwordHash: string
+  role?: $Enums.UserRole
+  department?: $Enums.Department | null
+  status?: $Enums.UserStatus
+  phone?: string | null
+  email?: string | null
+  salary?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  startDate?: Date | string | null
+  profileImage?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutReceivedByInput
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutRecordedByInput
+  housekeepingTasks?: Prisma.HousekeepingTaskUncheckedCreateNestedManyWithoutAssignedToInput
+  maintenanceRequests?: Prisma.MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdBookings?: Prisma.BookingUncheckedCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserCreateOrConnectWithoutShiftsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutShiftsInput, Prisma.UserUncheckedCreateWithoutShiftsInput>
+}
+
+export type UserUpsertWithoutShiftsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutShiftsInput, Prisma.UserUncheckedUpdateWithoutShiftsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutShiftsInput, Prisma.UserUncheckedCreateWithoutShiftsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutShiftsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutShiftsInput, Prisma.UserUncheckedUpdateWithoutShiftsInput>
+}
+
+export type UserUpdateWithoutShiftsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  department?: Prisma.NullableEnumDepartmentFieldUpdateOperationsInput | $Enums.Department | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  salary?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  startDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  profileImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  payments?: Prisma.PaymentUpdateManyWithoutReceivedByNestedInput
+  expenses?: Prisma.ExpenseUpdateManyWithoutRecordedByNestedInput
+  housekeepingTasks?: Prisma.HousekeepingTaskUpdateManyWithoutAssignedToNestedInput
+  maintenanceRequests?: Prisma.MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdBookings?: Prisma.BookingUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutShiftsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  department?: Prisma.NullableEnumDepartmentFieldUpdateOperationsInput | $Enums.Department | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  salary?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  startDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  profileImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutReceivedByNestedInput
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutRecordedByNestedInput
+  housekeepingTasks?: Prisma.HousekeepingTaskUncheckedUpdateManyWithoutAssignedToNestedInput
+  maintenanceRequests?: Prisma.MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdBookings?: Prisma.BookingUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
 
@@ -1361,6 +1514,7 @@ export type UserCountOutputType = {
   maintenanceRequests: number
   auditLogs: number
   createdBookings: number
+  shifts: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1370,6 +1524,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   maintenanceRequests?: boolean | UserCountOutputTypeCountMaintenanceRequestsArgs
   auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
   createdBookings?: boolean | UserCountOutputTypeCountCreatedBookingsArgs
+  shifts?: boolean | UserCountOutputTypeCountShiftsArgs
 }
 
 /**
@@ -1424,6 +1579,13 @@ export type UserCountOutputTypeCountCreatedBookingsArgs<ExtArgs extends runtime.
   where?: Prisma.BookingWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountShiftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ShiftWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1446,6 +1608,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   maintenanceRequests?: boolean | Prisma.User$maintenanceRequestsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   createdBookings?: boolean | Prisma.User$createdBookingsArgs<ExtArgs>
+  shifts?: boolean | Prisma.User$shiftsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1508,6 +1671,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   maintenanceRequests?: boolean | Prisma.User$maintenanceRequestsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   createdBookings?: boolean | Prisma.User$createdBookingsArgs<ExtArgs>
+  shifts?: boolean | Prisma.User$shiftsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1522,6 +1686,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     maintenanceRequests: Prisma.$MaintenanceRequestPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     createdBookings: Prisma.$BookingPayload<ExtArgs>[]
+    shifts: Prisma.$ShiftPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1938,6 +2103,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   maintenanceRequests<T extends Prisma.User$maintenanceRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$maintenanceRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MaintenanceRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   createdBookings<T extends Prisma.User$createdBookingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdBookingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BookingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  shifts<T extends Prisma.User$shiftsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$shiftsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShiftPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2515,6 +2681,30 @@ export type User$createdBookingsArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.BookingScalarFieldEnum | Prisma.BookingScalarFieldEnum[]
+}
+
+/**
+ * User.shifts
+ */
+export type User$shiftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Shift
+   */
+  select?: Prisma.ShiftSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Shift
+   */
+  omit?: Prisma.ShiftOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ShiftInclude<ExtArgs> | null
+  where?: Prisma.ShiftWhereInput
+  orderBy?: Prisma.ShiftOrderByWithRelationInput | Prisma.ShiftOrderByWithRelationInput[]
+  cursor?: Prisma.ShiftWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ShiftScalarFieldEnum | Prisma.ShiftScalarFieldEnum[]
 }
 
 /**
