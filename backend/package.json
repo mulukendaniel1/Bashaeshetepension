@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "build",
+    "build": "prisma generate --config prisma7.config.ts && node node_modules/typescript/bin/tsc",
     "start": "node dist/src/index.js",
     "db:generate": "prisma generate --config prisma7.config.ts",
     "db:validate": "prisma validate --config prisma7.config.ts",
