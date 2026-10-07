@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* This app is light-mode only. Tailwind v4's dark: classes react to the
+   OS/browser prefers-color-scheme setting by default, which caused every
+   dark: class across the app to activate on devices with system dark mode
+   on, even with no toggle and no .dark class anywhere in the DOM. Pinning
+   the dark variant to a class that is never present disables that
+   automatic behavior completely, so dark: classes are permanently inert. */
+@custom-variant dark (&:where(.never-enabled));
+
 :root {
   font-family: Inter, system-ui, sans-serif;
   color: #17211b;
