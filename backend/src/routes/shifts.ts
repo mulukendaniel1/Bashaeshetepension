@@ -57,11 +57,27 @@ router.get("/", async (req: AuthRequest, res, next) => {
     const mine = req.query.mine === "true";
     const isPrivileged = req.user?.role === UserRole.OWNER || req.user?.role === UserRole.MANAGER;
 
+    // Optional date range. "from" is included, "to" is excluded.
+    const fromDate = req.query.from ? new Date(String(req.query.from)) : undefined;
+    const toDate = req.query.to ? new Date(String(req.query.to)) : undefined;
+    const from = fromDate && !Number.isNaN(fromDate.getTime()) ? fromDate : undefined;
+    const to = toDate && !Number.isNaN(toDate.getTime()) ? toDate : undefined;
+
     const shifts = await prisma.shift.findMany({
-      where: mine || !isPrivileged ? { userId: req.user!.id } : undefined,
+      where: {
+        ...(mine || !isPrivileged ? { userId: req.user!.id } : {}),
+        ...(from || to
+          ? {
+              openedAt: {
+                ...(from ? { gte: from } : {}),
+                ...(to ? { lt: to } : {}),
+              },
+            }
+          : {}),
+      },
       include: includeRelations,
       orderBy: { openedAt: "desc" },
-      take: 100,
+      take: from || to ? 500 : 100,
     });
 
     res.json({ success: true, shifts: serializeDecimals(shifts) });
