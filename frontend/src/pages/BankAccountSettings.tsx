@@ -1,14 +1,5 @@
 import { motion } from "framer-motion";
-import {
-  Beaker,
-  ChevronLeft,
-  Landmark,
-  Plus,
-  Power,
-  Settings as SettingsIcon,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import * as lucideReact from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../api";
@@ -147,14 +138,14 @@ export default function BankAccountSettings() {
         to="/settings"
         className="flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-[#123c2c] dark:text-gray-400 dark:hover:text-white"
       >
-        <ChevronLeft size={18} />
+        <lucideReact.ChevronLeft size={18} />
         Back to Settings
       </Link>
 
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <div className="flex items-center gap-2">
-            <Landmark className="text-[#123c2c]" size={24} />
+            <lucideReact.Landmark className="text-[#123c2c]" size={24} />
             <h1 className="text-2xl font-bold tracking-tight dark:text-white">Bank Accounts &amp; SMS Rules</h1>
           </div>
 
@@ -169,7 +160,7 @@ export default function BankAccountSettings() {
             disabled={allRules.length === 0}
             className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5"
           >
-            <Beaker size={18} />
+            <lucideReact.Beaker size={18} />
             Test Parser
           </button>
 
@@ -179,7 +170,7 @@ export default function BankAccountSettings() {
             onClick={() => setShowAccountModal(true)}
             className="flex items-center justify-center gap-2 rounded-xl bg-[#123c2c] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#123c2c]/15 transition hover:bg-[#0d3024]"
           >
-            <Plus size={18} />
+            <lucideReact.Plus size={18} />
             Add Account
           </motion.button>
         </div>
@@ -197,7 +188,7 @@ export default function BankAccountSettings() {
         </div>
       ) : accounts.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center dark:border-white/15 dark:bg-[#1a231d]">
-          <Landmark className="mx-auto text-gray-300 dark:text-gray-600" size={42} />
+          <lucideReact.Landmark className="mx-auto text-gray-300 dark:text-gray-600" size={42} />
           <h3 className="mt-4 font-semibold dark:text-white">No bank accounts yet</h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Add your Pension and Personal accounts to start matching bank SMS.
@@ -245,14 +236,14 @@ export default function BankAccountSettings() {
                         : "border-gray-200 text-gray-400 hover:bg-gray-50 dark:border-white/10 dark:text-gray-500"
                     }`}
                   >
-                    <Power size={15} />
+                    <lucideReact.Power size={15} />
                   </button>
 
                   <button
                     onClick={() => deleteAccount(account.id)}
                     className="rounded-xl border border-red-100 p-2.5 text-red-500 transition hover:bg-red-50 dark:border-red-500/20 dark:text-red-400"
                   >
-                    <Trash2 size={15} />
+                    <lucideReact.Trash2 size={15} />
                   </button>
                 </div>
               </div>
@@ -293,7 +284,7 @@ export default function BankAccountSettings() {
                           onClick={() => deleteRule(rule.id)}
                           className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:text-gray-500 dark:hover:bg-red-500/10"
                         >
-                          <Trash2 size={14} />
+                          <lucideReact.Trash2 size={14} />
                         </button>
                       </div>
                     ))}
@@ -366,7 +357,7 @@ function AccountModal({
           <h2 className="text-xl font-bold dark:text-white">Add Bank Account</h2>
 
           <button onClick={onClose} className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/10">
-            <XCircle size={21} />
+            <lucideReact.XCircle size={21} />
           </button>
         </div>
 
@@ -459,7 +450,7 @@ function RuleModal({
         <div className="flex items-center justify-between border-b border-gray-100 p-6 dark:border-white/10">
           <h2 className="text-xl font-bold dark:text-white">Add SMS Rule</h2>
           <button onClick={onClose} className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/10">
-            <XCircle size={21} />
+            <lucideReact.XCircle size={21} />
           </button>
         </div>
 
@@ -552,11 +543,11 @@ function TesterModal({
       >
         <div className="flex items-center justify-between border-b border-gray-100 p-6 dark:border-white/10">
           <div className="flex items-center gap-2">
-            <Beaker size={18} className="text-[#123c2c]" />
+            <lucideReact.Beaker size={18} className="text-[#123c2c]" />
             <h2 className="text-xl font-bold dark:text-white">Test SMS Parser</h2>
           </div>
           <button onClick={onClose} className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/10">
-            <XCircle size={21} />
+            <lucideReact.XCircle size={21} />
           </button>
         </div>
 

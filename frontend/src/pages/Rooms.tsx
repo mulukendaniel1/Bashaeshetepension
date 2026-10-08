@@ -149,7 +149,7 @@ export default function Rooms() {
           current.map((room) => (room.id === editingRoom.id ? res.room : room))
         );
       } else {
-        const res = await api.post<{ success: boolean; room: Room }>(
+        await api.post<{ success: boolean; room: Room }>(
           "/rooms",
           data
         );
