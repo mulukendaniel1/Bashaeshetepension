@@ -126,4 +126,60 @@ router.patch("/:id", requireRoles(UserRole.OWNER, UserRole.MANAGER), async (req:
   }
 });
 
+// Only the owner can delete a staff account.
+// Accounts with bookings, payments or shifts stay in the database so your
+// reports and Z Reports keep their history. Use Deactivate for those.
+router.delete("/:id", requireRoles(UserRole.OWNER), async (req: AuthRequest, res, next) => {
+  try {
+    const id = paramId(req);
+
+    if (id === req.user?.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You cannot delete your own account.",
+      });
+    }
+
+    const target = await prisma.user.findUniqueOrThrow({
+      where: { id },
+      select: { role: true },
+    });
+
+    if (target.role === UserRole.OWNER) {
+      return res.status(403).json({
+        success: false,
+        message: "Owner accounts cannot be deleted.",
+      });
+    }
+
+    const [bookingCount, paymentCount, shiftCount] = await Promise.all([
+      prisma.booking.count({ where: { createdById: id } }),
+      prisma.payment.count({ where: { receivedById: id } }),
+      prisma.shift.count({ where: { userId: id } }),
+    ]);
+
+    if (bookingCount + paymentCount + shiftCount > 0) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "This staff member has bookings, payments or shifts on record. Use Deactivate to keep your history safe.",
+      });
+    }
+
+    await prisma.user.delete({ where: { id } });
+
+    res.json({ success: true });
+  } catch (e: any) {
+    // Foreign key error from another table that links to this user.
+    if (e?.code === "P2003") {
+      return res.status(409).json({
+        success: false,
+        message: "This staff member is linked to other records. Use Deactivate instead.",
+      });
+    }
+
+    next(e);
+  }
+});
+
 export default router;

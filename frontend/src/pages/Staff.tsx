@@ -5,12 +5,14 @@ import {
   Phone,
   Plus,
   Search,
+  Trash2,
   UserRound,
   Users,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
+import { useAuth } from "../AuthContext";
 
 type Role = "OWNER" | "MANAGER" | "RECEPTIONIST" | "ACCOUNTANT" | "STAFF";
 type Department = "FRONT_DESK" | "HOUSEKEEPING" | "KITCHEN" | "MAINTENANCE" | "MANAGEMENT";
@@ -58,6 +60,7 @@ const statusStyles: Record<Status, string> = {
 };
 
 export default function Staff() {
+  const { user } = useAuth();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -102,6 +105,10 @@ export default function Staff() {
   const activeCount = staff.filter((member) => member.status === "ACTIVE").length;
   const inactiveCount = staff.filter((member) => member.status === "INACTIVE").length;
 
+  // Only the owner sees Delete. It never shows on an owner row or on your own row.
+  const canDelete = (member: StaffMember) =>
+    user?.role === "OWNER" && member.role !== "OWNER" && member.id !== user?.id;
+
   const addStaff = async (member: {
     fullName: string;
     username: string;
@@ -136,6 +143,21 @@ export default function Staff() {
       );
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Could not update status.");
+    }
+  };
+
+  const deleteMember = async (member: StaffMember) => {
+    const confirmed = window.confirm(
+      `Delete ${member.fullName} (@${member.username})? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/staff/${member.id}`);
+      setStaff((current) => current.filter((item) => item.id !== member.id));
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not delete staff member.");
     }
   };
 
@@ -278,13 +300,23 @@ export default function Staff() {
                       </td>
 
                       <td className="px-5 py-5">
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-2">
                           <button
                             onClick={() => toggleStatus(member)}
                             className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
                           >
                             {member.status === "ACTIVE" ? "Deactivate" : "Activate"}
                           </button>
+
+                          {canDelete(member) && (
+                            <button
+                              onClick={() => deleteMember(member)}
+                              className="flex items-center gap-1.5 rounded-xl border border-red-200 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                            >
+                              <Trash2 size={14} />
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </motion.tr>
@@ -329,12 +361,24 @@ export default function Staff() {
                   />
                 </div>
 
-                <button
-                  onClick={() => toggleStatus(member)}
-                  className="mt-4 w-full rounded-xl border border-gray-200 py-2.5 text-sm font-medium"
-                >
-                  {member.status === "ACTIVE" ? "Deactivate" : "Activate"}
-                </button>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => toggleStatus(member)}
+                    className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium"
+                  >
+                    {member.status === "ACTIVE" ? "Deactivate" : "Activate"}
+                  </button>
+
+                  {canDelete(member) && (
+                    <button
+                      onClick={() => deleteMember(member)}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200 py-2.5 text-sm font-medium text-red-600"
+                    >
+                      <Trash2 size={15} />
+                      Delete
+                    </button>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
