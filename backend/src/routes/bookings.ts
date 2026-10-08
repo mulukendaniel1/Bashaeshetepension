@@ -12,6 +12,19 @@ router.use(requireAuth);
 const canManageBookings = requireRoles(UserRole.OWNER, UserRole.MANAGER, UserRole.RECEPTIONIST);
 const canRecordPayments = requireRoles(UserRole.OWNER, UserRole.MANAGER, UserRole.RECEPTIONIST, UserRole.ACCOUNTANT);
 
+/**
+ * Notification hook. It logs the event and never throws,
+ * so a notification problem cannot break a booking, check-in or check-out.
+ * Replace the body later if you add a notifications table, Telegram or SMS.
+ */
+async function notify(type: string, title: string, message: string): Promise<void> {
+  try {
+    console.log(`[notify] ${type}: ${title} - ${message}`);
+  } catch (err) {
+    console.error("Notification failed:", err);
+  }
+}
+
 function paramId(req: { params: Record<string, string | string[] | undefined> }): string {
   const value = req.params.id;
   return Array.isArray(value) ? value[0] : (value as string);
@@ -313,7 +326,3 @@ router.delete("/:id", canManageBookings, async (req, res, next) => {
 });
 
 export default router;
-
-function notify(arg0: string, arg1: string, arg2: string) {
-  throw new Error("Function not implemented.");
-}
