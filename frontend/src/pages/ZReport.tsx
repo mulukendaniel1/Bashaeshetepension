@@ -310,7 +310,7 @@ export default function ZReport() {
               <p className="text-sm text-gray-500 dark:text-gray-400">No payments recorded.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px]">
+                <table className="w-full min-w-175">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-white/10">
                       <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">

@@ -187,6 +187,22 @@ router.patch("/:id/status", canManageBookings, async (req, res, next) => {
       where: { id: paramId(req) },
     });
 
+    // A payment must be on record before the guest checks in.
+    if (status === "CHECKED_IN" && Number(booking.amountPaid) <= 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Record a payment before checking in the guest.",
+      });
+    }
+
+    // The guest cannot leave while a balance remains.
+    if (status === "CHECKED_OUT" && Number(booking.balance) > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `The guest still owes ${Number(booking.balance).toLocaleString()} ETB. Record the payment before check-out.`,
+      });
+    }
+
     const roomStatusForBookingStatus: Record<string, string | undefined> = {
       CONFIRMED: "RESERVED",
       CHECKED_IN: "OCCUPIED",

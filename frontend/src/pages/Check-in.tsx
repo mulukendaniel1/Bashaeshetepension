@@ -8,9 +8,11 @@ import {
   Phone,
   Search,
   UserRound,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
+import RecordPayment from "../components/RecordPayment";
 
 type BookingStatus =
   | "PENDING"
@@ -26,6 +28,9 @@ type Booking = {
   checkInDate: string;
   checkOutDate: string;
   numberOfGuests: number;
+  totalAmount: number;
+  amountPaid: number;
+  balance: number;
   status: BookingStatus;
   guest: { fullName: string; phone: string };
   room: { roomNumber: string; roomType: { name: string } };
@@ -52,6 +57,7 @@ export default function CheckIn() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [payBooking, setPayBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     loadBookings();
@@ -98,7 +104,7 @@ export default function CheckIn() {
     isToday(booking.checkInDate)
   ).length;
 
-  const checkInGuest = async (id: string) => {
+  const finishCheckIn = async (id: string) => {
     setProcessingId(id);
 
     try {
@@ -106,9 +112,21 @@ export default function CheckIn() {
       await loadBookings();
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Could not check in guest.");
+      await loadBookings();
     } finally {
+      setPayBooking(null);
       setProcessingId(null);
     }
+  };
+
+  // A payment must be on record before a guest checks in.
+  const checkInGuest = async (booking: Booking) => {
+    if (Number(booking.amountPaid) <= 0) {
+      setPayBooking(booking);
+      return;
+    }
+
+    await finishCheckIn(booking.id);
   };
 
   return (
@@ -230,7 +248,7 @@ export default function CheckIn() {
                   </div>
 
                   <button
-                    onClick={() => checkInGuest(booking.id)}
+                    onClick={() => checkInGuest(booking)}
                     disabled={processingId === booking.id}
                     className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#123c2c] py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
                   >
@@ -248,7 +266,7 @@ export default function CheckIn() {
 
               <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[700px]">
+                  <table className="w-full min-w-175">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50/70">
                         <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -291,6 +309,41 @@ export default function CheckIn() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {payBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-5 backdrop-blur-sm">
+          <div className="my-5 w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-bold">Payment required</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  {payBooking.guest.fullName} · Room {payBooking.room.roomNumber} ·{" "}
+                  {payBooking.bookingNumber}
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Total {Number(payBooking.totalAmount).toLocaleString()} ETB
+                </p>
+              </div>
+
+              <button
+                onClick={() => setPayBooking(null)}
+                className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+              >
+                <XCircle size={21} />
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <RecordPayment
+                bookingId={payBooking.id}
+                defaultAmount={Number(payBooking.balance)}
+                submitLabel="Record payment and check in"
+                onRecorded={() => finishCheckIn(payBooking.id)}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

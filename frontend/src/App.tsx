@@ -12,7 +12,6 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Rooms from "./pages/Rooms";
 import Bookings from "./pages/Bookings";
-import Guests from "./pages/Guests";
 import CheckIn from "./pages/Check-in";
 import Checkout from "./pages/Check-out";
 import Payments from "./pages/Payments";
@@ -44,7 +43,6 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/bookings" element={<Bookings />} />
-            <Route path="/guests" element={<Guests />} />
             <Route path="/check-in" element={<CheckIn />} />
             <Route path="/check-out" element={<Checkout />} />
             <Route path="/payments" element={<Payments />} />
