@@ -14,6 +14,7 @@ import { api, ApiError } from "../api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import ThermalPrint, { ThermalRow } from "../components/ThermalPrint";
 
 /**
  * Requires these packages:
@@ -352,20 +353,6 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="hidden text-center print:block">
-        <img
-          src="/logo.png"
-          alt="Basha Eshete Pension logo"
-          className="mx-auto mb-3 h-16 w-16 object-contain"
-        />
-
-        <h2 className="text-xl font-bold">
-          Basha Eshete Pension - Financial Report
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">{periodLabel}</p>
-        <p className="mt-1 text-xs text-gray-400">TIN: {TIN_NUMBER}</p>
-      </div>
-
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
           title="Total Revenue"
@@ -465,6 +452,45 @@ export default function Reports() {
           </p>
         </div>
       )}
+
+      <ThermalPrint>
+        <img
+          src="/logo.png"
+          alt=""
+          className="tp-logo"
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+          }}
+        />
+        <p className="tp-center tp-title">Basha Eshete Pension</p>
+        <p className="tp-center">Financial Report</p>
+        <p className="tp-center">{periodLabel}</p>
+        <p className="tp-center tp-small">TIN: {TIN_NUMBER}</p>
+
+        <div className="tp-line" />
+
+        <ThermalRow label="Total Revenue" value={`${totalRevenue.toLocaleString()} ETB`} />
+        <ThermalRow label="Total Expenses" value={`${totalExpenses.toLocaleString()} ETB`} />
+        <ThermalRow label="Net Profit" value={`${netProfit.toLocaleString()} ETB`} bold />
+        <ThermalRow label="Profit Margin" value={`${profitMargin}%`} />
+
+        <div className="tp-line" />
+        <p className="tp-heading">Details</p>
+
+        {filteredRows.length === 0 && <p>No data for this period.</p>}
+
+        {filteredRows.map((row) => (
+          <div key={row.id} className="tp-item">
+            <ThermalRow label={row.category} value={row.amount.toLocaleString()} />
+            <p className="tp-sub">
+              {row.type} - {formatDate(row.date)}
+            </p>
+          </div>
+        ))}
+
+        <div className="tp-line" />
+        <p className="tp-center tp-small">Printed: {new Date().toLocaleString("en-GB")}</p>
+      </ThermalPrint>
     </div>
   );
 }

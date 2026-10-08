@@ -5,6 +5,7 @@ import {
   CreditCard,
   FileBarChart,
   Landmark,
+  Printer,
   Receipt,
   Smartphone,
   Wallet,
@@ -12,6 +13,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
 import { useAuth } from "../AuthContext";
+import ThermalPrint, { ThermalRow } from "../components/ThermalPrint";
 
 type PaymentMethod = "CASH" | "TELEBIRR" | "CBE_BIRR" | "BANK_TRANSFER" | "CARD" | "OTHER";
 
@@ -130,17 +132,33 @@ export default function ZReport() {
     return Object.entries(report.totalsByBankAccount);
   }, [report]);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-7">
-      <div>
-        <div className="flex items-center gap-2">
-          <FileBarChart className="text-[#123c2c]" size={24} />
-          <h1 className="text-2xl font-bold tracking-tight dark:text-white">Z Report</h1>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <div className="flex items-center gap-2">
+            <FileBarChart className="text-[#123c2c]" size={24} />
+            <h1 className="text-2xl font-bold tracking-tight dark:text-white">Z Report</h1>
+          </div>
+
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Shift-level revenue summary and cash reconciliation.
+          </p>
         </div>
 
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Shift-level revenue summary and cash reconciliation.
-        </p>
+        {report && (
+          <button
+            onClick={handlePrint}
+            className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200"
+          >
+            <Printer size={18} />
+            Print
+          </button>
+        )}
       </div>
 
       {error && (
@@ -330,6 +348,92 @@ export default function ZReport() {
           </div>
         </>
       ) : null}
+
+      {report && (
+        <ThermalPrint>
+          <img
+            src="/logo.png"
+            alt=""
+            className="tp-logo"
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
+          <p className="tp-center tp-title">Basha Eshete Pension</p>
+          <p className="tp-center tp-bold">Z REPORT</p>
+
+          <div className="tp-line" />
+
+          <ThermalRow label="Shift" value={report.shift.label} />
+          <ThermalRow label="Cashier" value={report.shift.user.fullName} />
+          <ThermalRow label="Opened" value={formatDateTime(report.shift.openedAt)} />
+          <ThermalRow
+            label="Closed"
+            value={report.shift.closedAt ? formatDateTime(report.shift.closedAt) : "Still open"}
+          />
+
+          <div className="tp-line" />
+
+          <ThermalRow label="Total Collected" value={`${report.totalCollected.toLocaleString()} ETB`} bold />
+          <ThermalRow label="Payments" value={report.totalPaymentCount.toString()} />
+
+          <div className="tp-line" />
+          <p className="tp-heading">By Method</p>
+          {methodEntries.length === 0 && <p>No payments.</p>}
+          {methodEntries.map(([method, amount]) => (
+            <ThermalRow key={method} label={methodLabels[method]} value={`${amount.toLocaleString()} ETB`} />
+          ))}
+
+          {bankAccountEntries.length > 0 && (
+            <>
+              <div className="tp-line" />
+              <p className="tp-heading">Bank Accounts</p>
+              {bankAccountEntries.map(([account, amount]) => (
+                <ThermalRow key={account} label={account} value={`${amount.toLocaleString()} ETB`} />
+              ))}
+            </>
+          )}
+
+          <div className="tp-line" />
+          <p className="tp-heading">Cash</p>
+          <ThermalRow label="Opening" value={`${report.cashReconciliation.openingCash.toLocaleString()} ETB`} />
+          <ThermalRow label="Collected" value={`${report.cashReconciliation.cashCollected.toLocaleString()} ETB`} />
+          <ThermalRow
+            label="Expected Close"
+            value={`${report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB`}
+          />
+          {report.cashReconciliation.actualClosingCash !== null ? (
+            <>
+              <ThermalRow
+                label="Actual Close"
+                value={`${report.cashReconciliation.actualClosingCash.toLocaleString()} ETB`}
+              />
+              <ThermalRow
+                label="Variance"
+                value={`${report.cashReconciliation.variance! >= 0 ? "+" : ""}${report.cashReconciliation.variance!.toLocaleString()} ETB`}
+                bold
+              />
+            </>
+          ) : (
+            <ThermalRow label="Variance" value="Shift open" />
+          )}
+
+          <div className="tp-line" />
+          <p className="tp-heading">Payments</p>
+          {report.payments.length === 0 && <p>No payments.</p>}
+          {report.payments.map((payment) => (
+            <div key={payment.id} className="tp-item">
+              <ThermalRow label={payment.receiptNumber} value={payment.amount.toLocaleString()} />
+              <p className="tp-sub">
+                {payment.booking.guest.fullName} - Room {payment.booking.room.roomNumber} - {methodLabels[payment.method]}
+              </p>
+            </div>
+          ))}
+
+          <div className="tp-line" />
+          <p className="tp-center tp-small">Printed: {new Date().toLocaleString("en-GB")}</p>
+        </ThermalPrint>
+      )}
     </div>
   );
 }

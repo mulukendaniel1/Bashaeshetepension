@@ -1,0 +1,98 @@
+/* 80mm thermal receipt printing */
+
+.thermal-print {
+  display: none;
+}
+
+@page {
+  size: 80mm auto;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    width: 80mm !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* Hide the whole app. Only the receipt prints. */
+  #root {
+    display: none !important;
+  }
+
+  .thermal-print {
+    display: block !important;
+    width: 72mm;
+    margin: 0 auto;
+    padding: 3mm 0 6mm 0;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #000;
+    background: #fff;
+  }
+
+  .thermal-print * {
+    color: #000 !important;
+    box-sizing: border-box;
+  }
+
+  .tp-logo {
+    display: block;
+    max-width: 24mm;
+    height: auto;
+    margin: 0 auto 2mm auto;
+  }
+
+  .tp-center {
+    text-align: center;
+  }
+
+  .tp-title {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .tp-bold {
+    font-weight: 700;
+  }
+
+  .tp-small {
+    font-size: 10px;
+  }
+
+  .tp-line {
+    border-top: 1px dashed #000;
+    margin: 2mm 0;
+  }
+
+  .tp-heading {
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 1mm;
+  }
+
+  .tp-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 3mm;
+  }
+
+  .tp-row > span:last-child {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .tp-item {
+    margin-bottom: 1.5mm;
+    break-inside: avoid;
+  }
+
+  .tp-sub {
+    font-size: 10px;
+  }
+}
