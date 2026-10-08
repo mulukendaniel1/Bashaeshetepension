@@ -25,6 +25,10 @@ import shiftsRoutes from "./routes/shifts";
 import zreportRoutes from "./routes/zreport";
 import bankAccountsRoutes from "./routes/bankAccounts";
 
+(Prisma.Decimal.prototype as any).toJSON = function (this: any) {
+return Number(this.toString());
+};
+
 const app = express();
 const port = Number(process.env.PORT || 5000);
 
