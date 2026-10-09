@@ -8,6 +8,7 @@ ClipboardList,
 CreditCard,
 FileBarChart,
 Home,
+Landmark,
 LogIn,
 LogOut,
 Menu,
@@ -31,6 +32,7 @@ const navigation = [
 { name: "Check-out", path: "/check-out", icon: LogOut },
 { name: "Payments", path: "/payments", icon: CreditCard },
 { name: "Bank SMS", path: "/bank-sms", icon: MessageSquareText },
+{ name: "Bank Accounts", path: "/settings/bank-accounts", icon: Landmark },
 { name: "Expenses", path: "/expenses", icon: WalletCards },
 { name: "Inventory", path: "/inventory", icon: ShoppingCart },
 { name: "Housekeeping", path: "/housekeeping", icon: ClipboardList },
@@ -195,6 +197,7 @@ const Icon = item.icon;
 
   <NavLink
     to="/settings"
+    end
     onClick={closeMobile}
     className={({ isActive }) =>
       `group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
