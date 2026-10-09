@@ -28,6 +28,7 @@ type Payment = {
     room: { roomNumber: string };
   };
   receivedBy: { fullName: string };
+  bankTransactionMatch?: { id: string } | null;
 };
 
 const methodIcons: Record<PaymentMethod, React.ReactNode> = {
@@ -183,7 +184,7 @@ export default function Payments() {
         <>
           <div className="hidden overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm lg:block">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
+              <table className="w-full min-w-225">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/70">
                     <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -241,6 +242,12 @@ export default function Payments() {
                           {methodIcons[payment.method]}
                           {methodLabels[payment.method]}
                         </span>
+
+                        {payment.bankTransactionMatch && (
+                          <span className="mt-1.5 inline-block rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                            Verified by SMS
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-5 py-5">
@@ -274,6 +281,7 @@ export default function Payments() {
 
                   <span className="rounded-full border border-gray-200 px-2.5 py-1 text-xs font-medium">
                     {methodLabels[payment.method]}
+                    {payment.bankTransactionMatch ? " · Verified" : ""}
                   </span>
                 </div>
 

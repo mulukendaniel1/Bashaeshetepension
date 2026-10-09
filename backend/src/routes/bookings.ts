@@ -5,6 +5,7 @@ import type { Prisma } from "../generated/prisma/client";
 import { requireAuth, requireRoles, AuthRequest } from "../middleware/auth";
 
 import { UserRole } from "../generated/prisma/enums";
+import { tryMatchPayment } from "../utils/bankMatching";
 
 const router = Router();
 router.use(requireAuth);
@@ -256,6 +257,7 @@ const paymentSchema = z.object({
   amount: z.coerce.number().positive(),
   method: z.enum(["CASH", "TELEBIRR", "CBE_BIRR", "BANK_TRANSFER", "CARD", "OTHER"]),
   reference: z.string().optional(),
+  bankAccountId: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -291,6 +293,7 @@ router.post("/:id/payments", canRecordPayments, async (req: AuthRequest, res, ne
           amount: input.amount,
           method: input.method,
           reference: input.reference,
+          bankAccountId: input.bankAccountId || undefined,
           notes: input.notes,
           bookingId: booking.id,
           receivedById: req.user!.id,
@@ -307,12 +310,15 @@ router.post("/:id/payments", canRecordPayments, async (req: AuthRequest, res, ne
       }),
     ]);
 
+    // Bank payments are checked against the bank SMS that already arrived.
+    const verifiedBySms = await tryMatchPayment(payment.id);
+
     const updatedBooking = await prisma.booking.findUniqueOrThrow({
       where: { id: booking.id },
       include: includeRelations,
     });
 
-    res.status(201).json({ success: true, payment, booking: updatedBooking });
+    res.status(201).json({ success: true, payment, booking: updatedBooking, verifiedBySms });
   } catch (e) {
     next(e);
   }

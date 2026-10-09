@@ -1,5 +1,5 @@
 import { CreditCard } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, ApiError } from "../api";
 
 type PaymentMethod = "CASH" | "TELEBIRR" | "CBE_BIRR" | "BANK_TRANSFER" | "CARD" | "OTHER";
@@ -12,6 +12,16 @@ const methodLabels: Record<PaymentMethod, string> = {
   CARD: "Card",
   OTHER: "Other",
 };
+
+type BankAccountOption = {
+  id: string;
+  name: string;
+  bankName: string;
+  accountType: "PENSION" | "PERSONAL";
+  active: boolean;
+};
+
+const BANK_METHODS: PaymentMethod[] = ["BANK_TRANSFER", "TELEBIRR", "CBE_BIRR"];
 
 /**
  * Small form that records a payment against a booking.
@@ -32,7 +42,21 @@ export default function RecordPayment({
   const [amount, setAmount] = useState<number>(defaultAmount);
   const [method, setMethod] = useState<PaymentMethod>("CASH");
   const [reference, setReference] = useState("");
+  const [bankAccountId, setBankAccountId] = useState("");
+  const [accounts, setAccounts] = useState<BankAccountOption[]>([]);
   const [saving, setSaving] = useState(false);
+
+  const needsBank = BANK_METHODS.includes(method);
+
+  // Bank payments are checked against the bank SMS, so staff choose the account.
+  useEffect(() => {
+    if (!needsBank || accounts.length > 0) return;
+
+    api
+      .get<{ success: boolean; accounts: BankAccountOption[] }>("/bank-accounts")
+      .then((res) => setAccounts(res.accounts.filter((account) => account.active)))
+      .catch(() => setAccounts([]));
+  }, [needsBank, accounts.length]);
 
   const submit = async () => {
     if (!(amount > 0)) {
@@ -47,6 +71,7 @@ export default function RecordPayment({
         amount,
         method,
         reference: reference.trim() || undefined,
+        bankAccountId: needsBank && bankAccountId ? bankAccountId : undefined,
       });
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Could not record payment.");
@@ -102,6 +127,29 @@ export default function RecordPayment({
           />
         </div>
       </div>
+
+      {needsBank && (
+        <div className="mt-3">
+          <label className="mb-1.5 block text-xs font-medium text-gray-500">
+            Bank account that received the money
+          </label>
+          <select
+            value={bankAccountId}
+            onChange={(event) => setBankAccountId(event.target.value)}
+            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#123c2c]"
+          >
+            <option value="">Not sure</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name} ({account.accountType === "PENSION" ? "Pension" : "Personal"})
+              </option>
+            ))}
+          </select>
+          <p className="mt-1.5 text-xs text-gray-500">
+            The system checks this payment against the bank SMS and marks it Verified.
+          </p>
+        </div>
+      )}
 
       <button
         onClick={submit}

@@ -21,6 +21,8 @@ router.get("/", async (req, res, next) => {
         receivedBy: {
           select: { id: true, fullName: true },
         },
+        bankTransactionMatch: { select: { id: true, matchedAt: true } },
+        bankAccount: { select: { id: true, name: true, accountType: true } },
       },
       orderBy: { createdAt: "desc" },
     });

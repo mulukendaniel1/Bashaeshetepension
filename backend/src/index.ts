@@ -24,6 +24,7 @@ import settingsRoutes from "./routes/settings";
 import shiftsRoutes from "./routes/shifts";
 import zreportRoutes from "./routes/zreport";
 import bankAccountsRoutes from "./routes/bankAccounts";
+import smsBridgeRoutes from "./routes/smsBridge";
 
 (Prisma.Decimal.prototype as any).toJSON = function (this: any) {
 return Number(this.toString());
@@ -62,6 +63,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/shifts", shiftsRoutes);
 app.use("/api/zreport", zreportRoutes);
 app.use("/api/bank-accounts", bankAccountsRoutes);
+app.use("/api/sms-bridge", smsBridgeRoutes);
 
 // 404 for any unmatched /api route, before the error handler.
 app.use("/api", (_req, res) => {
