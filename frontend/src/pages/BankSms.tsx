@@ -181,7 +181,8 @@ export default function BankSms() {
     await act(`/sms-bridge/transactions/${tx.id}/unmatch`, "Could not remove the match.");
   };
 
-  const addDevice = async (label: string) => {
+  // Returns an error text, or an empty string when the phone was added.
+  const addDevice = async (label: string): Promise<string> => {
     try {
       const res = await api.post<{ success: boolean; device: Device; token: string }>(
         "/sms-bridge/devices",
@@ -189,8 +190,9 @@ export default function BankSms() {
       );
       setNewToken({ label: res.device.label, token: res.token });
       await loadDevices();
+      return "";
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not add the device.");
+      return err instanceof ApiError ? err.message : "Could not reach the server.";
     }
   };
 
@@ -416,11 +418,12 @@ function DevicesTab({
 }: {
   isOwner: boolean;
   devices: Device[];
-  onAdd: (label: string) => Promise<void>;
+  onAdd: (label: string) => Promise<string>;
   onRevoke: (device: Device) => void;
 }) {
   const [label, setLabel] = useState("");
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   if (!isOwner) {
     return (
@@ -431,13 +434,22 @@ function DevicesTab({
   }
 
   const add = async () => {
-    if (!label.trim()) return;
+    if (!label.trim()) {
+      setMessage("Type a name for the phone first, for example Reception phone.");
+      return;
+    }
 
+    setMessage("");
     setSaving(true);
 
     try {
-      await onAdd(label.trim());
-      setLabel("");
+      const failure = await onAdd(label.trim());
+
+      if (failure) {
+        setMessage(failure);
+      } else {
+        setLabel("");
+      }
     } finally {
       setSaving(false);
     }
@@ -449,6 +461,7 @@ function DevicesTab({
         <input
           value={label}
           onChange={(event) => setLabel(event.target.value)}
+          onKeyDown={(event) => event.key === "Enter" && add()}
           placeholder="Phone name, for example Reception phone"
           className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-[#123c2c] focus:bg-white"
         />
@@ -459,9 +472,13 @@ function DevicesTab({
           className="flex items-center justify-center gap-2 rounded-xl bg-[#123c2c] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0d3024] disabled:opacity-60"
         >
           <Plus size={16} />
-          Add phone
+          {saving ? "Adding..." : "Add phone"}
         </button>
       </div>
+
+      {message && (
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{message}</p>
+      )}
 
       {devices.length === 0 ? (
         <p className="text-sm text-gray-500">No phone yet. Add one to get its token.</p>
