@@ -106,6 +106,7 @@ export default function BankAccountSettings() {
     bankName: string;
     smsSender: string;
     amountPattern: string;
+    accountPattern: string;
     referencePattern: string;
     creditKeywords: string;
     debitKeywords: string;
@@ -277,6 +278,7 @@ export default function BankAccountSettings() {
                           </p>
                           <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                             Credit keywords: {rule.creditKeywords}
+                            {rule.accountPattern ? ` · Account pattern: ${rule.accountPattern}` : ""}
                           </p>
                         </div>
 
@@ -416,6 +418,7 @@ function RuleModal({
     bankName: string;
     smsSender: string;
     amountPattern: string;
+    accountPattern: string;
     referencePattern: string;
     creditKeywords: string;
     debitKeywords: string;
@@ -424,9 +427,12 @@ function RuleModal({
   const [bankName, setBankName] = useState("");
   const [smsSender, setSmsSender] = useState("");
   const [amountPattern, setAmountPattern] = useState("ETB\\s*([0-9,]+(?:\\.[0-9]+)?)");
-  const [referencePattern, setReferencePattern] = useState("Ref:?\\s*([A-Z0-9]+)");
-  const [creditKeywords, setCreditKeywords] = useState("credited");
-  const [debitKeywords, setDebitKeywords] = useState("debited");
+  const [accountPattern, setAccountPattern] = useState("");
+  const [referencePattern, setReferencePattern] = useState(
+    "Ref(?:erence)?\\.?\\s*(?:No\\.?|Number)?\\s*:?\\s*([A-Z0-9]{6,})"
+  );
+  const [creditKeywords, setCreditKeywords] = useState("credited,received");
+  const [debitKeywords, setDebitKeywords] = useState("debit,debited");
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -434,7 +440,7 @@ function RuleModal({
 
     setSaving(true);
     try {
-      await onSave({ bankName, smsSender, amountPattern, referencePattern, creditKeywords, debitKeywords });
+      await onSave({ bankName, smsSender, amountPattern, accountPattern, referencePattern, creditKeywords, debitKeywords });
     } finally {
       setSaving(false);
     }
@@ -457,13 +463,22 @@ function RuleModal({
         <div className="p-6">
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Bank name" value={bankName} onChange={setBankName} placeholder="e.g. CBE" />
-            <Field label="SMS sender ID" value={smsSender} onChange={setSmsSender} placeholder="e.g. CBE or 127" />
+            <Field label="SMS sender ID" value={smsSender} onChange={setSmsSender} placeholder="One sender, e.g. CBE" />
 
             <div className="sm:col-span-2">
               <Field
                 label="Amount pattern (regex, capture group 1 = amount)"
                 value={amountPattern}
                 onChange={setAmountPattern}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <Field
+                label="Account pattern (optional, text that appears only in this account's SMS)"
+                value={accountPattern}
+                onChange={setAccountPattern}
+                placeholder="e.g. 6057 (last digits of the account)"
               />
             </div>
 

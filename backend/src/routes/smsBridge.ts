@@ -31,24 +31,41 @@ function firstString(value: unknown): string {
 /**
  * Reads MacroDroid's request in any of three shapes:
  * 1. text/plain body with the SMS text, plus ?sender=... or an X-Sms-Sender header
- * 2. JSON with sender and message
+ * 2. JSON with sender and message (also text/plain that holds JSON)
  * 3. form fields with sender and message
  */
 function readPayload(req: express.Request) {
   let sender = "";
   let message = "";
 
+  const fromObject = (body: Record<string, unknown>) => {
+    message = firstString(body.message ?? body.messageText ?? body.text ?? body.body ?? body.sms);
+    sender = firstString(body.sender ?? body.from ?? body.number);
+  };
+
   if (typeof req.body === "string") {
-    message = req.body;
-    sender = firstString(req.query.sender) || firstString(req.header("x-sms-sender"));
+    const text = req.body.trim();
+
+    // A phone macro may send JSON text with a text/plain header. Read it too.
+    if (text.startsWith("{") && text.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(text);
+
+        if (parsed && typeof parsed === "object") {
+          fromObject(parsed as Record<string, unknown>);
+        }
+      } catch {
+        // Not valid JSON. Treat the whole body as the SMS text.
+      }
+    }
+
+    if (!message) message = text;
   } else if (req.body && typeof req.body === "object") {
-    const body = req.body as Record<string, unknown>;
-    message = firstString(body.message ?? body.text ?? body.body ?? body.sms);
-    sender =
-      firstString(body.sender ?? body.from ?? body.number) ||
-      firstString(req.query.sender) ||
-      firstString(req.header("x-sms-sender"));
+    fromObject(req.body as Record<string, unknown>);
   }
+
+  sender =
+    sender || firstString(req.query.sender) || firstString(req.header("x-sms-sender"));
 
   return { sender: sender.trim().slice(0, 100), message: message.trim() };
 }
@@ -67,14 +84,17 @@ function accountMatches(pattern: string | null, text: string) {
   }
 }
 
+// A rule may list several sender IDs, separated by a comma or the word "or".
 function senderMatches(ruleSender: string, sender: string) {
-  const rule = ruleSender.trim().toLowerCase();
   const incoming = sender.trim().toLowerCase();
 
-  if (!rule || !incoming) return false;
-  if (rule === incoming) return true;
+  if (!incoming) return false;
 
-  return rule.length >= 3 && incoming.includes(rule);
+  return ruleSender
+    .split(/,|;|\||\bor\b/i)
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean)
+    .some((rule) => rule === incoming || (rule.length >= 3 && incoming.includes(rule)));
 }
 
 // ---------------------------------------------------------------------------
@@ -146,8 +166,20 @@ router.post(
       const type = parsed.transactionType as "CREDIT" | "DEBIT";
       const amount = parsed.amount ?? 0;
 
+      // Two accounts fit the same SMS. Never guess the account. A person decides.
+      const creditAccounts = new Set(
+        parsedList
+          .filter((item) => item.parsed.transactionType === "CREDIT" && isAutoQueueable(item.parsed))
+          .map((item) => item.rule.bankAccountId)
+      );
+      const ambiguous = type === "CREDIT" && creditAccounts.size > 1;
+
       const status =
-        type === "DEBIT" ? "DETECTED" : isAutoQueueable(parsed) ? "UNMATCHED" : "REVIEW_REQUIRED";
+        type === "DEBIT"
+          ? "DETECTED"
+          : isAutoQueueable(parsed) && !ambiguous
+            ? "UNMATCHED"
+            : "REVIEW_REQUIRED";
 
       const normalizedText = message.replace(/\s+/g, " ").toLowerCase();
 
@@ -178,7 +210,7 @@ router.post(
             confidence: parsed.confidence,
             status,
             fingerprint,
-            bankAccountId: rule.bankAccountId,
+            bankAccountId: ambiguous ? null : rule.bankAccountId,
             deviceId: device.id,
           },
         });
