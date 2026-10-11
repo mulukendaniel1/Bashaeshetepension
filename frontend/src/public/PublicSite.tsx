@@ -31,9 +31,21 @@ const amenities = [
 ];
 
 const rooms = [
-  { name: "Standard Room", price: "800 ETB / night", img: "/images/room-standard.jpg" },
-  { name: "Deluxe Room", price: "1,200 ETB / night", img: "/images/room-deluxe.jpg" },
-  { name: "Family Suite", price: "1,800 ETB / night", img: "/images/room-suite.jpg" },
+  {
+    name: "Room 1",
+    price: "1,200 ETB / night",
+    img: "/images/room-standard.jpg",
+  },
+  {
+    name: "Room 2",
+    price: "1,400 ETB / night",
+    img: "/images/room-deluxe.jpg",
+  },
+  {
+    name: "Room 3",
+    price: "1,500 ETB / night",
+    img: "/images/room-suite.jpg",
+  },
 ];
 
 export default function PublicSite() {
@@ -53,7 +65,7 @@ export default function PublicSite() {
             <a href="#amenities" className="transition hover:text-[#123c2c]">Amenities</a>
             <a href="#contact" className="transition hover:text-[#123c2c]">Contact</a>
             <a
-              href="/internal"
+              href="/login"
               className="rounded-lg bg-[#123c2c] px-4 py-2 text-white transition hover:bg-[#0d3024]"
             >
               Staff Login

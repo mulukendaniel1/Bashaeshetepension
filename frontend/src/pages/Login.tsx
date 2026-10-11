@@ -27,7 +27,7 @@ export default function Login() {
 
     try {
       await login(username, password);
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

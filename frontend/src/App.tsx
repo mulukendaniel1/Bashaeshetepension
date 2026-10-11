@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter,
   Navigate,
@@ -26,14 +27,20 @@ import ZReport from "./pages/ZReport";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import BankAccountSettings from "./pages/BankAccountSettings";
+import PublicSite from "./public/PublicSite";
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          {/* Public website */}
+          <Route path="/" element={<PublicSite />} />
+
+          {/* Staff login */}
           <Route path="/login" element={<Login />} />
 
+          {/* Protected management system */}
           <Route
             element={
               <ProtectedRoute>
@@ -41,7 +48,7 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/check-in" element={<CheckIn />} />
@@ -57,10 +64,14 @@ export default function App() {
             <Route path="/zreport" element={<ZReport />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/settings/bank-accounts" element={<BankAccountSettings />} />
-
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route
+              path="/settings/bank-accounts"
+              element={<BankAccountSettings />}
+            />
           </Route>
+
+          {/* Unknown URLs */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
