@@ -190,7 +190,7 @@ export default function Dashboard() {
               </div>
 
               <a
-                href="/rooms"
+                href="/rooms/rooms"
                 className="rounded-xl bg-[#123c2c] px-4 py-2 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:shadow-lg"
               >
                 View All

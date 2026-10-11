@@ -70,7 +70,8 @@ export const ModelName = {
   SmsBridgeDevice: 'SmsBridgeDevice',
   BankTransaction: 'BankTransaction',
   BankTransactionMatch: 'BankTransactionMatch',
-  Shift: 'Shift'
+  Shift: 'Shift',
+  BookingRequest: 'BookingRequest'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -422,6 +423,25 @@ export const ShiftScalarFieldEnum = {
 } as const
 
 export type ShiftScalarFieldEnum = (typeof ShiftScalarFieldEnum)[keyof typeof ShiftScalarFieldEnum]
+
+
+export const BookingRequestScalarFieldEnum = {
+  id: 'id',
+  fullName: 'fullName',
+  phone: 'phone',
+  email: 'email',
+  roomTypeId: 'roomTypeId',
+  checkInDate: 'checkInDate',
+  checkOutDate: 'checkOutDate',
+  numberOfGuests: 'numberOfGuests',
+  message: 'message',
+  status: 'status',
+  bookingNumber: 'bookingNumber',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BookingRequestScalarFieldEnum = (typeof BookingRequestScalarFieldEnum)[keyof typeof BookingRequestScalarFieldEnum]
 
 
 export const SortOrder = {

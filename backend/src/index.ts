@@ -25,6 +25,8 @@ import shiftsRoutes from "./routes/shifts";
 import zreportRoutes from "./routes/zreport";
 import bankAccountsRoutes from "./routes/bankAccounts";
 import smsBridgeRoutes from "./routes/smsBridge";
+import publicRoutes from "./routes/public";
+import bookingRequestsRoutes from "./routes/bookingRequests";
 
 (Prisma.Decimal.prototype as any).toJSON = function (this: any) {
 return Number(this.toString());
@@ -32,6 +34,9 @@ return Number(this.toString());
 
 const app = express();
 const port = Number(process.env.PORT || 5000);
+
+// The app sits behind a proxy (Nginx or Render). This keeps rate limits per visitor.
+app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || true, credentials: true }));
@@ -64,6 +69,8 @@ app.use("/api/shifts", shiftsRoutes);
 app.use("/api/zreport", zreportRoutes);
 app.use("/api/bank-accounts", bankAccountsRoutes);
 app.use("/api/sms-bridge", smsBridgeRoutes);
+app.use("/api/public", publicRoutes);
+app.use("/api/booking-requests", bookingRequestsRoutes);
 
 // 404 for any unmatched /api route, before the error handler.
 app.use("/api", (_req, res) => {

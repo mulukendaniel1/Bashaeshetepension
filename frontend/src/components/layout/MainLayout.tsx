@@ -7,6 +7,7 @@ Calculator,
 ClipboardList,
 CreditCard,
 FileBarChart,
+Globe,
 Home,
 Landmark,
 LogIn,
@@ -25,9 +26,10 @@ import { useState } from "react";
 
 
 const navigation = [
-{ name: "Dashboard", path: "/dashboard", icon: Home },
+{ name: "Dashboard", path: "/", icon: Home },
 { name: "Rooms", path: "/rooms", icon: BedDouble },
 { name: "Bookings", path: "/bookings", icon: CalendarCheck },
+{ name: "Web Requests", path: "/booking-requests", icon: Globe },
 { name: "Check-in", path: "/check-in", icon: LogIn },
 { name: "Check-out", path: "/check-out", icon: LogOut },
 { name: "Payments", path: "/payments", icon: CreditCard },

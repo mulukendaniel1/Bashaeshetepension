@@ -117,3 +117,8 @@ export type BankTransactionMatch = Prisma.BankTransactionMatchModel
  * 
  */
 export type Shift = Prisma.ShiftModel
+/**
+ * Model BookingRequest
+ * 
+ */
+export type BookingRequest = Prisma.BookingRequestModel

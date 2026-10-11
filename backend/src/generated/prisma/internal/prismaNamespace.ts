@@ -416,7 +416,8 @@ export const ModelName = {
   SmsBridgeDevice: 'SmsBridgeDevice',
   BankTransaction: 'BankTransaction',
   BankTransactionMatch: 'BankTransactionMatch',
-  Shift: 'Shift'
+  Shift: 'Shift',
+  BookingRequest: 'BookingRequest'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -432,7 +433,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "roomType" | "room" | "guest" | "booking" | "payment" | "expense" | "inventoryItem" | "inventoryTransaction" | "housekeepingTask" | "maintenanceRequest" | "auditLog" | "notification" | "setting" | "bankAccount" | "bankSmsRule" | "smsBridgeDevice" | "bankTransaction" | "bankTransactionMatch" | "shift"
+    modelProps: "user" | "roomType" | "room" | "guest" | "booking" | "payment" | "expense" | "inventoryItem" | "inventoryTransaction" | "housekeepingTask" | "maintenanceRequest" | "auditLog" | "notification" | "setting" | "bankAccount" | "bankSmsRule" | "smsBridgeDevice" | "bankTransaction" | "bankTransactionMatch" | "shift" | "bookingRequest"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1916,6 +1917,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    BookingRequest: {
+      payload: Prisma.$BookingRequestPayload<ExtArgs>
+      fields: Prisma.BookingRequestFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BookingRequestFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BookingRequestFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload>
+        }
+        findFirst: {
+          args: Prisma.BookingRequestFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BookingRequestFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload>
+        }
+        findMany: {
+          args: Prisma.BookingRequestFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload>[]
+        }
+        create: {
+          args: Prisma.BookingRequestCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload>
+        }
+        createMany: {
+          args: Prisma.BookingRequestCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BookingRequestCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload>[]
+        }
+        delete: {
+          args: Prisma.BookingRequestDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload>
+        }
+        update: {
+          args: Prisma.BookingRequestUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload>
+        }
+        deleteMany: {
+          args: Prisma.BookingRequestDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BookingRequestUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BookingRequestUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload>[]
+        }
+        upsert: {
+          args: Prisma.BookingRequestUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BookingRequestPayload>
+        }
+        aggregate: {
+          args: Prisma.BookingRequestAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBookingRequest>
+        }
+        groupBy: {
+          args: Prisma.BookingRequestGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BookingRequestGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BookingRequestCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BookingRequestCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2290,6 +2365,25 @@ export const ShiftScalarFieldEnum = {
 export type ShiftScalarFieldEnum = (typeof ShiftScalarFieldEnum)[keyof typeof ShiftScalarFieldEnum]
 
 
+export const BookingRequestScalarFieldEnum = {
+  id: 'id',
+  fullName: 'fullName',
+  phone: 'phone',
+  email: 'email',
+  roomTypeId: 'roomTypeId',
+  checkInDate: 'checkInDate',
+  checkOutDate: 'checkOutDate',
+  numberOfGuests: 'numberOfGuests',
+  message: 'message',
+  status: 'status',
+  bookingNumber: 'bookingNumber',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BookingRequestScalarFieldEnum = (typeof BookingRequestScalarFieldEnum)[keyof typeof BookingRequestScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2622,6 +2716,20 @@ export type ListEnumShiftStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$
 
 
 /**
+ * Reference to a field of type 'BookingRequestStatus'
+ */
+export type EnumBookingRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BookingRequestStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'BookingRequestStatus[]'
+ */
+export type ListEnumBookingRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BookingRequestStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -2805,6 +2913,7 @@ export type GlobalOmitConfig = {
   bankTransaction?: Prisma.BankTransactionOmit
   bankTransactionMatch?: Prisma.BankTransactionMatchOmit
   shift?: Prisma.ShiftOmit
+  bookingRequest?: Prisma.BookingRequestOmit
 }
 
 /* Types for Logging */

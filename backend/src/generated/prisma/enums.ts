@@ -178,3 +178,12 @@ export const SmsBridgeDeviceStatus = {
 } as const
 
 export type SmsBridgeDeviceStatus = (typeof SmsBridgeDeviceStatus)[keyof typeof SmsBridgeDeviceStatus]
+
+
+export const BookingRequestStatus = {
+  NEW: 'NEW',
+  CONFIRMED: 'CONFIRMED',
+  DECLINED: 'DECLINED'
+} as const
+
+export type BookingRequestStatus = (typeof BookingRequestStatus)[keyof typeof BookingRequestStatus]
