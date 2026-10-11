@@ -18,6 +18,14 @@ const INFO_DEFAULTS: Record<string, string> = {
   checkInTime: "14:00",
   checkOutTime: "12:00",
   currency: "ETB",
+  // Website content. Edited in the admin Website page. Empty means the site uses its built-in text.
+  siteTagline: "",
+  siteEmail: "",
+  siteHours: "",
+  siteMapQuery: "",
+  siteHeroImage: "",
+  siteAboutImage: "",
+  siteAboutText: "",
 };
 
 function nightsBetween(checkIn: Date, checkOut: Date) {
@@ -97,6 +105,7 @@ router.get("/info", async (_req, res, next) => {
 router.get("/room-types", async (_req, res, next) => {
   try {
     const types = await prisma.roomType.findMany({
+      where: { isPublic: true },
       orderBy: { basePrice: "asc" },
       include: {
         rooms: {
@@ -113,7 +122,7 @@ router.get("/room-types", async (_req, res, next) => {
       basePrice: type.basePrice,
       maxGuests: type.maxGuests,
       beds: type.beds,
-      imageUrl: type.rooms.find((room) => room.imageUrl)?.imageUrl || null,
+      imageUrl: type.imageUrl || type.rooms.find((room) => room.imageUrl)?.imageUrl || null,
       roomCount: type.rooms.length,
     }));
 
@@ -139,7 +148,7 @@ router.get("/availability", async (req, res, next) => {
     }
 
     const types = await prisma.roomType.findMany({
-      where: { maxGuests: { gte: guests } },
+      where: { isPublic: true, maxGuests: { gte: guests } },
       orderBy: { basePrice: "asc" },
     });
 
@@ -207,7 +216,7 @@ router.post("/booking-requests", submitLimiter, async (req, res, next) => {
 
     const roomType = await prisma.roomType.findUnique({ where: { id: input.roomTypeId } });
 
-    if (!roomType) {
+    if (!roomType || !roomType.isPublic) {
       return res.status(404).json({ success: false, message: "That room type does not exist." });
     }
 

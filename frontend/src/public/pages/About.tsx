@@ -1,7 +1,6 @@
 import { HeartHandshake, Home, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
-import { siteConfig } from "../siteConfig";
-import { usePageTitle, useSiteInfo } from "../data";
+import { resolveSite, usePageTitle, useSiteInfo } from "../data";
 
 const values = [
   { icon: <HeartHandshake size={22} />, title: "Warm hospitality", text: "Every guest is welcome like family." },
@@ -13,6 +12,8 @@ export default function About() {
   usePageTitle("About | Basha Eshete Pension");
 
   const info = useSiteInfo();
+  const site = resolveSite(info);
+  const storyParagraphs = site.aboutText.split(/\n\s*\n/).map((text) => text.trim()).filter(Boolean);
 
   return (
     <>
@@ -27,21 +28,31 @@ export default function About() {
 
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-2">
         <img
-          src={siteConfig.roomImages[0]}
+          src={site.aboutImage}
           alt={info.businessName}
           className="h-80 w-full rounded-2xl object-cover shadow-lg"
         />
 
         <div>
           <h2 className="text-3xl font-bold">Our story</h2>
-          <p className="mt-4 text-gray-600">
-            We opened {info.businessName} to give travellers, families, and business guests a calm
-            place to rest. Our team keeps the rooms clean, the staff helpful, and the prices fair.
-          </p>
-          <p className="mt-4 text-gray-600">
-            Whether you stay one night or several weeks, we treat your stay as our own work. Ask
-            the front desk for meals, local advice, or help with transport.
-          </p>
+          {storyParagraphs.length > 0 ? (
+            storyParagraphs.map((text, index) => (
+              <p key={index} className="mt-4 text-gray-600">
+                {text}
+              </p>
+            ))
+          ) : (
+            <>
+              <p className="mt-4 text-gray-600">
+                We opened {info.businessName} to give travellers, families, and business guests a calm
+                place to rest. Our team keeps the rooms clean, the staff helpful, and the prices fair.
+              </p>
+              <p className="mt-4 text-gray-600">
+                Whether you stay one night or several weeks, we treat your stay as our own work. Ask
+                the front desk for meals, local advice, or help with transport.
+              </p>
+            </>
+          )}
 
           <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
             <div className="rounded-xl bg-[#f6f8f6] p-4">

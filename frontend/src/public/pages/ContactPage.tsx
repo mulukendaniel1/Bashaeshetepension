@@ -1,15 +1,15 @@
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
-import { siteConfig } from "../siteConfig";
-import { usePageTitle, useSiteInfo } from "../data";
+import { resolveSite, usePageTitle, useSiteInfo } from "../data";
 
 export default function ContactPage() {
   usePageTitle("Contact | Basha Eshete Pension");
 
   const info = useSiteInfo();
+  const site = resolveSite(info);
 
   const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    info.address || siteConfig.mapQuery
+    info.address || site.mapQuery
   )}`;
 
   const cards = [
@@ -28,11 +28,11 @@ export default function ContactPage() {
     {
       icon: <Clock size={22} />,
       title: "Hours",
-      text: `${siteConfig.hours}. Check-in ${info.checkInTime}, check-out ${info.checkOutTime}.`,
+      text: `${site.hours}. Check-in ${info.checkInTime}, check-out ${info.checkOutTime}.`,
       href: undefined,
     },
-    ...(siteConfig.email
-      ? [{ icon: <Mail size={22} />, title: "Email", text: siteConfig.email, href: `mailto:${siteConfig.email}` }]
+    ...(site.email
+      ? [{ icon: <Mail size={22} />, title: "Email", text: site.email, href: `mailto:${site.email}` }]
       : []),
   ];
 

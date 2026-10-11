@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { BedDouble, ShieldCheck, UtensilsCrossed, Wifi } from "lucide-react";
 import { Link } from "react-router-dom";
+import { assetUrl } from "../../api";
 import { siteConfig } from "../siteConfig";
-import { money, usePageTitle, useRoomTypes, useSiteInfo } from "../data";
+import { money, resolveSite, usePageTitle, useRoomTypes, useSiteInfo } from "../data";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -20,6 +21,7 @@ export default function Home() {
   usePageTitle("Basha Eshete Pension | Comfortable rooms and warm hospitality");
 
   const info = useSiteInfo();
+  const site = resolveSite(info);
   const { roomTypes } = useRoomTypes();
 
   const nameWords = (info.businessName || "").split(" ");
@@ -30,7 +32,7 @@ export default function Home() {
     <>
       <section className="relative flex min-h-[90vh] items-center overflow-hidden">
         <div className="absolute inset-0">
-          <img src={siteConfig.heroImage} alt="" className="h-full w-full object-cover" />
+          <img src={site.heroImage} alt="" className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-black/5" />
         </div>
 
@@ -39,25 +41,25 @@ export default function Home() {
             initial="hidden"
             animate="show"
             transition={{ staggerChildren: 0.12 }}
-            className="max-w-2xl rounded-3xl border border-white/25 bg-white/10 p-8 text-white shadow-2xl backdrop-blur-md sm:p-12"
+            className="max-w-xl text-white"
           >
-            <motion.p variants={fadeUp} className="text-sm font-semibold uppercase tracking-widest text-emerald-300">
+            <motion.p variants={fadeUp} className="text-xs font-semibold uppercase tracking-widest text-emerald-300 drop-shadow-md">
               Welcome to
             </motion.p>
 
-            <motion.h1 variants={fadeUp} className="mt-3 font-serif text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
+            <motion.h1 variants={fadeUp} className="mt-3 inline-block rounded-2xl border border-white/25 bg-white/10 px-6 py-4 font-serif text-3xl font-bold leading-tight shadow-2xl backdrop-blur-md sm:px-8 sm:py-5 sm:text-4xl">
               {nameFirst}
               <span className="block text-emerald-300">{nameLast}</span>
             </motion.h1>
 
-            <motion.p variants={fadeUp} className="mt-5 text-lg text-white/90">
-              {siteConfig.tagline} Clean rooms, friendly service, and everything you need close by.
+            <motion.p variants={fadeUp} className="mt-5 max-w-md text-base text-white drop-shadow-md">
+              {site.tagline} Clean rooms, friendly service, and everything you need close by.
             </motion.p>
 
-            <motion.div variants={fadeUp} className="mt-8">
+            <motion.div variants={fadeUp} className="mt-6">
               <Link
                 to="/book"
-                className="inline-block rounded-xl bg-[#d8a84e] px-7 py-3.5 text-sm font-semibold text-[#10241b] transition hover:-translate-y-0.5 hover:shadow-xl"
+                className="inline-block rounded-xl bg-[#d8a84e] px-6 py-3 text-sm font-semibold text-[#10241b] transition hover:-translate-y-0.5 hover:shadow-xl"
               >
                 Book a Room
               </Link>
@@ -107,7 +109,7 @@ export default function Home() {
                   className="group overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
                 >
                   <img
-                    src={type.imageUrl || siteConfig.roomImages[index % siteConfig.roomImages.length]}
+                    src={assetUrl(type.imageUrl) || siteConfig.roomImages[index % siteConfig.roomImages.length]}
                     alt={type.name}
                     className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
                   />

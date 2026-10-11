@@ -27,6 +27,9 @@ import bankAccountsRoutes from "./routes/bankAccounts";
 import smsBridgeRoutes from "./routes/smsBridge";
 import publicRoutes from "./routes/public";
 import bookingRequestsRoutes from "./routes/bookingRequests";
+import roomTypesRoutes from "./routes/roomTypes";
+import uploadRoutes from "./routes/uploads";
+import { UPLOAD_DIR } from "./utils/uploads";
 
 (Prisma.Decimal.prototype as any).toJSON = function (this: any) {
 return Number(this.toString());
@@ -40,6 +43,17 @@ app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || true, credentials: true }));
+
+// Uploaded photos. Served before the rate limit, so a page full of photos does not use the quota.
+app.use(
+  "/api/uploads",
+  (_req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(UPLOAD_DIR, { maxAge: "7d", index: false, dotfiles: "deny" })
+);
+
 app.use(express.json({ limit: "2mb" }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300 }));
 
@@ -71,6 +85,8 @@ app.use("/api/bank-accounts", bankAccountsRoutes);
 app.use("/api/sms-bridge", smsBridgeRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/booking-requests", bookingRequestsRoutes);
+app.use("/api/room-types", roomTypesRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 // 404 for any unmatched /api route, before the error handler.
 app.use("/api", (_req, res) => {

@@ -117,6 +117,8 @@ export const RoomTypeScalarFieldEnum = {
   basePrice: 'basePrice',
   maxGuests: 'maxGuests',
   beds: 'beds',
+  imageUrl: 'imageUrl',
+  isPublic: 'isPublic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

@@ -12,6 +12,7 @@ import MainLayout from "./components/layout/MainLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Rooms from "./pages/Rooms";
+import Website from "./pages/Website";
 import Bookings from "./pages/Bookings";
 import CheckIn from "./pages/Check-in";
 import Checkout from "./pages/Check-out";
@@ -58,6 +59,7 @@ export default function AdminApp() {
           >
             <Route path="/" element={<Dashboard />} />
             <Route path="/rooms" element={<Rooms />} />
+            <Route path="/website" element={<Website />} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/check-in" element={<CheckIn />} />
             <Route path="/check-out" element={<Checkout />} />

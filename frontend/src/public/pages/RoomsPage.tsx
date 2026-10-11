@@ -1,5 +1,6 @@
 import { BedDouble, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { assetUrl } from "../../api";
 import { siteConfig } from "../siteConfig";
 import { money, usePageTitle, useRoomTypes, useSiteInfo } from "../data";
 
@@ -30,7 +31,7 @@ export default function RoomsPage() {
             {roomTypes.map((type, index) => (
               <div key={type.id} className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
                 <img
-                  src={type.imageUrl || siteConfig.roomImages[index % siteConfig.roomImages.length]}
+                  src={assetUrl(type.imageUrl) || siteConfig.roomImages[index % siteConfig.roomImages.length]}
                   alt={type.name}
                   className="h-56 w-full object-cover"
                 />

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { api } from "../api";
+import { api, assetUrl } from "../api";
+import { siteConfig } from "./siteConfig";
 
 export type SiteInfo = {
   businessName: string;
@@ -8,6 +9,14 @@ export type SiteInfo = {
   checkInTime: string;
   checkOutTime: string;
   currency: string;
+  // Website content from the admin Website page. Empty means "use the built-in text".
+  siteTagline: string;
+  siteEmail: string;
+  siteHours: string;
+  siteMapQuery: string;
+  siteHeroImage: string;
+  siteAboutImage: string;
+  siteAboutText: string;
 };
 
 export type PublicRoomType = {
@@ -28,7 +37,27 @@ const defaultInfo: SiteInfo = {
   checkInTime: "14:00",
   checkOutTime: "12:00",
   currency: "ETB",
+  siteTagline: "",
+  siteEmail: "",
+  siteHours: "",
+  siteMapQuery: "",
+  siteHeroImage: "",
+  siteAboutImage: "",
+  siteAboutText: "",
 };
+
+// Text and photos for the public pages. The admin value wins. The built-in value is the fallback.
+export function resolveSite(info: SiteInfo) {
+  return {
+    tagline: info.siteTagline || siteConfig.tagline,
+    email: info.siteEmail || siteConfig.email,
+    hours: info.siteHours || siteConfig.hours,
+    mapQuery: info.siteMapQuery || siteConfig.mapQuery,
+    heroImage: assetUrl(info.siteHeroImage) || siteConfig.heroImage,
+    aboutImage: assetUrl(info.siteAboutImage) || siteConfig.roomImages[0],
+    aboutText: info.siteAboutText || "",
+  };
+}
 
 export function useSiteInfo() {
   const [info, setInfo] = useState<SiteInfo>(defaultInfo);

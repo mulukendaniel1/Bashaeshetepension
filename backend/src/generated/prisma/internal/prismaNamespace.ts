@@ -2057,6 +2057,8 @@ export const RoomTypeScalarFieldEnum = {
   basePrice: 'basePrice',
   maxGuests: 'maxGuests',
   beds: 'beds',
+  imageUrl: 'imageUrl',
+  isPublic: 'isPublic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -2513,6 +2515,13 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'RoomStatus'
  */
 export type EnumRoomStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoomStatus'>
@@ -2635,13 +2644,6 @@ export type EnumMaintenanceStatusFieldRefInput<$PrismaModel> = FieldRefInputType
  * Reference to a field of type 'MaintenanceStatus[]'
  */
 export type ListEnumMaintenanceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MaintenanceStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
