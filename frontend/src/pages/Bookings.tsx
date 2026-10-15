@@ -7,11 +7,13 @@ import {
   CreditCard,
   Plus,
   Search,
+  Trash2,
   UserRound,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
+import { useAuth } from "../AuthContext";
 
 type BookingStatus =
   | "PENDING"
@@ -76,6 +78,9 @@ const paymentStyles: Record<PaymentStatus, string> = {
 };
 
 export default function Bookings() {
+  const { user } = useAuth();
+  const canDelete = user?.role === "OWNER" || user?.role === "MANAGER";
+
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -127,17 +132,35 @@ export default function Bookings() {
     });
   }, [bookings, search, statusFilter]);
 
+  // Cancel keeps the booking in the list as Cancelled and frees the room.
   const cancelBooking = async (id: string) => {
-    const confirmed = window.confirm("Cancel this booking?");
+    const reason = window.prompt("Cancel this booking? Write a short reason (you can leave it empty).");
+    if (reason === null) return;
+
+    try {
+      await api.post(`/bookings/${id}/cancel`, { reason: reason.trim() || undefined });
+      await loadAll();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not cancel booking.");
+    }
+  };
+
+  // Delete removes the booking for good. It needs no payments on it.
+  const deleteBooking = async (id: string) => {
+    const confirmed = window.confirm(
+      "Delete this booking for good? This cannot be undone. Use Cancel if you want to keep a record."
+    );
     if (!confirmed) return;
 
     try {
       await api.delete(`/bookings/${id}`);
       await loadAll();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not cancel booking.");
+      alert(err instanceof ApiError ? err.message : "Could not delete booking.");
     }
   };
+
+  const canCancel = (status: string) => status === "PENDING" || status === "CONFIRMED";
 
   const totalRevenue = bookings
     .filter((booking) => booking.status !== "CANCELLED")
@@ -354,12 +377,23 @@ export default function Bookings() {
 
                       <td className="px-5 py-5">
                         <div className="flex justify-end gap-2">
-                          {booking.status !== "CANCELLED" && booking.status !== "CHECKED_OUT" && (
+                          {canCancel(booking.status) && (
                             <button
                               onClick={() => cancelBooking(booking.id)}
-                              className="rounded-xl border border-red-100 p-2.5 text-red-500 transition hover:bg-red-50"
+                              title="Cancel booking"
+                              className="rounded-xl border border-amber-200 p-2.5 text-amber-600 transition hover:bg-amber-50"
                             >
                               <XCircle size={16} />
+                            </button>
+                          )}
+
+                          {canDelete && booking.status !== "CHECKED_IN" && (
+                            <button
+                              onClick={() => deleteBooking(booking.id)}
+                              title="Delete booking"
+                              className="rounded-xl border border-red-100 p-2.5 text-red-500 transition hover:bg-red-50"
+                            >
+                              <Trash2 size={16} />
                             </button>
                           )}
                         </div>
@@ -410,14 +444,25 @@ export default function Bookings() {
                   <InfoItem label="Payment" value={booking.paymentStatus} />
                 </div>
 
-                {booking.status !== "CANCELLED" && booking.status !== "CHECKED_OUT" && (
+                {(canCancel(booking.status) || (canDelete && booking.status !== "CHECKED_IN")) && (
                   <div className="mt-5 flex gap-2 border-t border-gray-100 pt-4">
-                    <button
-                      onClick={() => cancelBooking(booking.id)}
-                      className="flex-1 rounded-xl border border-red-100 py-2.5 text-sm font-medium text-red-500"
-                    >
-                      Cancel Booking
-                    </button>
+                    {canCancel(booking.status) && (
+                      <button
+                        onClick={() => cancelBooking(booking.id)}
+                        className="flex-1 rounded-xl border border-amber-200 py-2.5 text-sm font-medium text-amber-600"
+                      >
+                        Cancel Booking
+                      </button>
+                    )}
+
+                    {canDelete && (booking.status as string) !== "CHECKED_IN" && (
+                      <button
+                        onClick={() => deleteBooking(booking.id)}
+                        className="flex-1 rounded-xl border border-red-100 py-2.5 text-sm font-medium text-red-500"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 )}
               </motion.div>

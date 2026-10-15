@@ -545,6 +545,8 @@ model BankTransactionMatch {
 model Shift {
   id        String      @id @default(cuid())
   label     String
+  // The name typed when the shift opens. It separates people who share one login.
+  workerName String?
   status    ShiftStatus @default(OPEN)
 
   openedAt  DateTime    @default(now())

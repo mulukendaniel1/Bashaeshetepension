@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../../prisma";
 import { requireAuth, requireRoles, AuthRequest } from "../middleware/auth";
 import { UserRole } from "../generated/prisma/enums";
+import { deleteMaintenanceRequest } from "../utils/Recordactions";
 
 const router = Router();
 router.use(requireAuth);
@@ -119,5 +120,19 @@ router.patch("/:id/status", async (req: AuthRequest, res, next) => {
     next(e);
   }
 });
+
+// Delete a request made by mistake. Owner and manager only.
+router.delete(
+  "/:id",
+  requireRoles(UserRole.OWNER, UserRole.MANAGER),
+  async (req: AuthRequest, res, next) => {
+    try {
+      await deleteMaintenanceRequest(paramId(req), req.user!.id);
+      res.json({ success: true });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
 
 export default router;

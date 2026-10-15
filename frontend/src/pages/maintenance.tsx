@@ -6,11 +6,13 @@ import {
   Clock3,
   Plus,
   Search,
+  Trash2,
   Wrench,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
+import { useAuth } from "../AuthContext";
 
 type RequestStatus = "OPEN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 type RequestPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -53,6 +55,9 @@ const priorityStyles: Record<string, string> = {
 };
 
 export default function Maintenance() {
+  const { user } = useAuth();
+  const canDelete = user?.role === "OWNER" || user?.role === "MANAGER";
+
   const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -122,6 +127,30 @@ export default function Maintenance() {
       setCompletingId(null);
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Could not update request.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // Delete a request made by mistake. Its cost leaves the reports too.
+  const deleteRequest = async (request: MaintenanceRequest) => {
+    const confirmed = window.confirm(
+      `Delete the request "${request.title}"? This cannot be undone.${
+        request.status === "COMPLETED" && request.cost > 0
+          ? " Its repair cost also leaves the reports."
+          : ""
+      }`
+    );
+
+    if (!confirmed) return;
+
+    setProcessingId(request.id);
+
+    try {
+      await api.delete(`/maintenance/${request.id}`);
+      setRequests((current) => current.filter((item) => item.id !== request.id));
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not delete the request.");
     } finally {
       setProcessingId(null);
     }
@@ -304,6 +333,19 @@ export default function Maintenance() {
                     className="rounded-xl border border-red-100 px-4 text-sm font-medium text-red-500 transition hover:bg-red-50 disabled:opacity-60"
                   >
                     Cancel
+                  </button>
+                </div>
+              )}
+
+              {canDelete && (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    onClick={() => deleteRequest(request)}
+                    disabled={processingId === request.id}
+                    className="flex items-center gap-1.5 rounded-xl border border-red-100 px-3 py-2 text-xs font-medium text-red-500 transition hover:bg-red-50 disabled:opacity-60"
+                  >
+                    <Trash2 size={14} />
+                    Delete
                   </button>
                 </div>
               )}

@@ -2353,6 +2353,7 @@ export type BankTransactionMatchScalarFieldEnum = (typeof BankTransactionMatchSc
 export const ShiftScalarFieldEnum = {
   id: 'id',
   label: 'label',
+  workerName: 'workerName',
   status: 'status',
   openedAt: 'openedAt',
   closedAt: 'closedAt',

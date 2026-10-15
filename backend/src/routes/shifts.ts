@@ -107,6 +107,7 @@ router.get("/:id", async (req: AuthRequest, res, next) => {
 
 const openSchema = z.object({
   label: z.string().min(1),
+  workerName: z.string().trim().min(2, "Type the name of the person on this shift.").max(60),
   openingCash: z.coerce.number().nonnegative().default(0),
 });
 
@@ -128,6 +129,7 @@ router.post("/open", async (req: AuthRequest, res, next) => {
     const shift = await prisma.shift.create({
       data: {
         label: input.label,
+        workerName: input.workerName,
         openingCash: input.openingCash,
         userId: req.user!.id,
       },
@@ -174,6 +176,34 @@ router.post("/:id/close", async (req: AuthRequest, res, next) => {
     });
 
     res.json({ success: true, shift: serializeDecimals(updated) });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Delete a shift opened by mistake. A shift with payments cannot be deleted.
+// Cancel those payments in the Z Report first, so no money record disappears by accident.
+router.delete("/:id", requireRoles(UserRole.OWNER, UserRole.MANAGER), async (req, res, next) => {
+  try {
+    const id = paramId(req);
+
+    await prisma.shift.findUniqueOrThrow({ where: { id } });
+
+    const [payments, matches] = await Promise.all([
+      prisma.payment.count({ where: { shiftId: id } }),
+      prisma.bankTransactionMatch.count({ where: { shiftId: id } }),
+    ]);
+
+    if (payments > 0 || matches > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `This shift has ${payments} payment${payments === 1 ? "" : "s"}. Cancel them in the Z Report first, then delete the shift.`,
+      });
+    }
+
+    await prisma.shift.delete({ where: { id } });
+
+    res.json({ success: true });
   } catch (e) {
     next(e);
   }

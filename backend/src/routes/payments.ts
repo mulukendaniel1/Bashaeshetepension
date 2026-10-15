@@ -1,6 +1,9 @@
 import { Router } from "express";
+import { z } from "zod";
 import { prisma } from "../../prisma";
-import { requireAuth } from "../middleware/auth";
+import { requireAuth, requireRoles, AuthRequest } from "../middleware/auth";
+import { UserRole } from "../generated/prisma/enums";
+import { cancelPayment } from "../utils/Recordactions";
 
 const router = Router();
 router.use(requireAuth);
@@ -61,5 +64,25 @@ router.get("/summary", async (req, res, next) => {
     next(e);
   }
 });
+
+const cancelSchema = z.object({ reason: z.string().trim().min(3, "Write a short reason.").max(200) });
+
+// Cancel a payment recorded by mistake. Owner and manager only.
+router.post(
+  "/:id/cancel",
+  requireRoles(UserRole.OWNER, UserRole.MANAGER),
+  async (req: AuthRequest, res, next) => {
+    try {
+      const { reason } = cancelSchema.parse(req.body);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+      await cancelPayment(id, req.user!.id, reason);
+
+      res.json({ success: true });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
 
 export default router;

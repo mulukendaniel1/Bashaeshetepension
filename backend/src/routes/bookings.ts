@@ -324,22 +324,114 @@ router.post("/:id/payments", canRecordPayments, async (req: AuthRequest, res, ne
   }
 });
 
-router.delete("/:id", canManageBookings, async (req, res, next) => {
+const ACTIVE_STATUSES = ["PENDING", "CONFIRMED", "CHECKED_IN"] as const;
+
+// The room is freed only when no other active booking holds it.
+async function freeRoomIfUnused(tx: Prisma.TransactionClient, roomId: string, exceptBookingId: string) {
+  const others = await tx.booking.count({
+    where: { roomId, id: { not: exceptBookingId }, status: { in: [...ACTIVE_STATUSES] } },
+  });
+
+  const room = await tx.room.findUnique({ where: { id: roomId } });
+
+  if (others === 0 && room?.status === "RESERVED") {
+    await tx.room.update({ where: { id: roomId }, data: { status: "AVAILABLE" } });
+  }
+}
+
+const cancelSchema = z.object({ reason: z.string().trim().max(200).optional() });
+
+// Cancel a booking that has not checked in. The booking stays in the list as Cancelled.
+router.post("/:id/cancel", canManageBookings, async (req: AuthRequest, res, next) => {
   try {
-    const booking = await prisma.booking.findUniqueOrThrow({
-      where: { id: paramId(req) },
+    const { reason } = cancelSchema.parse(req.body);
+    const id = paramId(req);
+
+    const booking = await prisma.booking.findUniqueOrThrow({ where: { id } });
+
+    if (booking.status !== "PENDING" && booking.status !== "CONFIRMED") {
+      return res.status(409).json({
+        success: false,
+        message: "Only a booking that has not checked in can be cancelled.",
+      });
+    }
+
+    if (Number(booking.amountPaid) > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This booking has payments. Cancel the payments first, then cancel the booking.",
+      });
+    }
+
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.booking.update({
+        where: { id },
+        data: {
+          status: "CANCELLED",
+          notes: reason
+            ? `${booking.notes ? `${booking.notes}. ` : ""}Cancelled: ${reason}`
+            : booking.notes,
+        },
+      });
+
+      await freeRoomIfUnused(tx, booking.roomId, id);
+
+      await tx.auditLog.create({
+        data: {
+          action: "BOOKING_CANCELLED",
+          entity: "Booking",
+          entityId: id,
+          userId: req.user!.id,
+          details: JSON.stringify({ bookingNumber: booking.bookingNumber, reason: reason || null }),
+        },
+      });
     });
 
-    await prisma.$transaction([
-      prisma.booking.update({
-        where: { id: paramId(req) },
-        data: { status: "CANCELLED" },
-      }),
-      prisma.room.update({
-        where: { id: booking.roomId },
-        data: { status: "AVAILABLE" },
-      }),
-    ]);
+    res.json({ success: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Delete a booking for good. Owner and manager only.
+// A booking with payments or a guest in the room cannot be deleted.
+router.delete("/:id", requireRoles(UserRole.OWNER, UserRole.MANAGER), async (req: AuthRequest, res, next) => {
+  try {
+    const id = paramId(req);
+
+    const booking = await prisma.booking.findUniqueOrThrow({ where: { id } });
+
+    if (booking.status === "CHECKED_IN") {
+      return res.status(409).json({
+        success: false,
+        message: "The guest is checked in. Check the guest out or cancel the stay first.",
+      });
+    }
+
+    const payments = await prisma.payment.count({ where: { bookingId: id } });
+
+    if (payments > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This booking has payments. Cancel the payments first, then delete the booking.",
+      });
+    }
+
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.booking.delete({ where: { id } });
+
+      await freeRoomIfUnused(tx, booking.roomId, id);
+
+      await tx.auditLog.create({
+        data: {
+          action: "BOOKING_DELETED",
+          entity: "Booking",
+          entityId: id,
+          userId: req.user!.id,
+          details: JSON.stringify({ bookingNumber: booking.bookingNumber, status: booking.status }),
+        },
+      });
+    });
 
     res.json({ success: true });
   } catch (e) {
