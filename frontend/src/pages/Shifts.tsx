@@ -7,6 +7,7 @@ import {
   LogOut,
   Sun,
   Sunset,
+  Trash2,
   UserRound,
   Users,
   XCircle,
@@ -20,6 +21,7 @@ type ShiftStatus = "OPEN" | "CLOSED";
 type Shift = {
   id: string;
   label: string;
+  workerName: string | null;
   status: ShiftStatus;
   openedAt: string;
   closedAt: string | null;
@@ -197,11 +199,12 @@ export default function Shifts() {
     );
   }, [visibleHistory]);
 
-  const openShift = async (label: string, openingCash: number) => {
+  const openShift = async (label: string, openingCash: number, workerName: string) => {
     try {
       const res = await api.post<{ success: boolean; shift: Shift }>("/shifts/open", {
         label,
         openingCash,
+        workerName,
       });
       setActiveShift(res.shift);
       setShowOpenModal(false);
@@ -222,6 +225,23 @@ export default function Shifts() {
       loadHistory();
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Could not close shift.");
+    }
+  };
+
+  // Delete a shift opened by mistake. The server refuses a shift that has payments.
+  const deleteShift = async (shift: Shift) => {
+    const name = shift.workerName || shift.user.fullName;
+    const confirmed = window.confirm(
+      `Delete the ${shift.label} of ${name}? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/shifts/${shift.id}`);
+      await Promise.all([loadAll(), loadHistory()]);
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not delete the shift.");
     }
   };
 
@@ -253,6 +273,12 @@ export default function Shifts() {
               </span>
 
               <p className="mt-3 text-lg font-bold dark:text-white">{activeShift.label}</p>
+
+              {activeShift.workerName && (
+                <p className="mt-0.5 text-sm font-medium text-gray-600 dark:text-gray-300">
+                  Worker: {activeShift.workerName}
+                </p>
+              )}
 
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Opened {formatDateTime(activeShift.openedAt)} · Opening cash{" "}
@@ -315,14 +341,25 @@ export default function Shifts() {
                     </div>
 
                     <div>
-                      <p className="text-sm font-semibold dark:text-white">{shift.user.fullName}</p>
+                      <p className="text-sm font-semibold dark:text-white">
+                        {shift.workerName || shift.user.fullName}
+                      </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{shift.label}</p>
                     </div>
                   </div>
 
                   <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
                     Since {formatDateTime(shift.openedAt)}
+                    {shift.workerName ? ` · login: ${shift.user.fullName}` : ""}
                   </p>
+
+                  <button
+                    onClick={() => deleteShift(shift)}
+                    className="mt-3 flex items-center gap-1.5 text-xs font-medium text-red-500"
+                  >
+                    <Trash2 size={13} />
+                    Delete this shift
+                  </button>
                 </div>
               ))}
             </div>
@@ -425,9 +462,12 @@ export default function Shifts() {
                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Shift
                     </th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Worker
+                    </th>
                     {isPrivileged && (
                       <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Staff
+                        Login
                       </th>
                     )}
                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -442,6 +482,11 @@ export default function Shifts() {
                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Closing Cash
                     </th>
+                    {isPrivileged && (
+                      <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
 
@@ -449,6 +494,9 @@ export default function Shifts() {
                   {visibleHistory.map((shift) => (
                     <tr key={shift.id} className="border-b border-gray-100 last:border-0 dark:border-white/5">
                       <td className="px-3 py-4 text-sm font-medium dark:text-white">{shift.label}</td>
+                      <td className="px-3 py-4 text-sm dark:text-gray-200">
+                        {shift.workerName || shift.user.fullName}
+                      </td>
                       {isPrivileged && (
                         <td className="px-3 py-4 text-sm dark:text-gray-200">{shift.user.fullName}</td>
                       )}
@@ -466,6 +514,17 @@ export default function Shifts() {
                           ? `${Number(shift.closingCash).toLocaleString()} ETB`
                           : "-"}
                       </td>
+                      {isPrivileged && (
+                        <td className="px-3 py-4 text-right">
+                          <button
+                            onClick={() => deleteShift(shift)}
+                            title="Delete shift"
+                            className="rounded-xl border border-red-100 p-2 text-red-500 transition hover:bg-red-50"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -504,12 +563,23 @@ function OpenShiftModal({
   onSave,
 }: {
   onClose: () => void;
-  onSave: (label: string, openingCash: number) => void;
+  onSave: (label: string, openingCash: number, workerName: string) => void;
 }) {
   const [shiftType, setShiftType] = useState<ShiftType>(
     new Date().getHours() < 14 ? "Morning Shift" : "Afternoon Shift"
   );
   const [openingCash, setOpeningCash] = useState(0);
+  const [workerName, setWorkerName] = useState("");
+  const [nameError, setNameError] = useState("");
+
+  const submit = () => {
+    if (workerName.trim().length < 2) {
+      setNameError("Type the name of the person who works this shift.");
+      return;
+    }
+
+    onSave(shiftType, openingCash, workerName.trim());
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-5 backdrop-blur-sm">
@@ -554,6 +624,23 @@ function OpenShiftModal({
           </div>
 
           <label className="mb-2 mt-5 block text-sm font-medium dark:text-gray-200">
+            Name of the person on this shift
+          </label>
+
+          <input
+            value={workerName}
+            maxLength={60}
+            onChange={(event) => {
+              setWorkerName(event.target.value);
+              setNameError("");
+            }}
+            placeholder="Type the full name"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-[#123c2c] dark:border-white/10 dark:bg-white/5 dark:text-white"
+          />
+
+          {nameError && <p className="mt-2 text-sm text-red-600">{nameError}</p>}
+
+          <label className="mb-2 mt-5 block text-sm font-medium dark:text-gray-200">
             Opening cash (ETB)
           </label>
 
@@ -574,7 +661,7 @@ function OpenShiftModal({
             </button>
 
             <button
-              onClick={() => onSave(shiftType, openingCash)}
+              onClick={submit}
               className="flex-1 rounded-xl bg-[#123c2c] py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-lg"
             >
               Open Shift
@@ -618,7 +705,8 @@ function CloseShiftModal({
 
         <div className="p-6">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {shift.label} · Opened {formatDateTime(shift.openedAt)}
+            {shift.label}
+            {shift.workerName ? ` · ${shift.workerName}` : ""} · Opened {formatDateTime(shift.openedAt)}
           </p>
 
           <label className="mb-2 mt-5 block text-sm font-medium dark:text-gray-200">

@@ -5,12 +5,16 @@ import {
   FileSpreadsheet,
   FileText,
   PiggyBank,
+  Pencil,
   Printer,
+  Trash2,
   TrendingDown,
   TrendingUp,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
+import { useAuth } from "../AuthContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -64,6 +68,13 @@ function toISODate(date: Date) {
 export default function Reports() {
   const todayISO = toISODate(new Date());
 
+  // Only the owner and the manager edit or delete report entries.
+  // Everyone else reads the reports and nothing more.
+  const { user } = useAuth();
+  const canEdit = user?.role === "OWNER" || user?.role === "MANAGER";
+  const [reloadKey, setReloadKey] = useState(0);
+  const [editRow, setEditRow] = useState<ReportRow | null>(null);
+
   const [period, setPeriod] = useState<Period>("monthly");
   const [selectedDate, setSelectedDate] = useState(todayISO);
   const [selectedWeek, setSelectedWeek] = useState(todayISO);
@@ -106,7 +117,49 @@ export default function Reports() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
+
+  const deleteRow = async (row: ReportRow) => {
+    let url = `/reports/entry/${row.id}`;
+
+    if (row.id.startsWith("payment-")) {
+      const reason = window.prompt(
+        `Remove this ${row.amount.toLocaleString()} ETB payment from the reports?\nThe payment is cancelled and the booking balance goes back up.\nWrite a short reason:`
+      );
+
+      if (reason === null) return;
+
+      if (reason.trim().length < 3) {
+        alert("Write a short reason to remove a payment.");
+        return;
+      }
+
+      url += `?reason=${encodeURIComponent(reason.trim())}`;
+    } else {
+      const confirmed = window.confirm(
+        `Delete this ${row.category} entry of ${row.amount.toLocaleString()} ETB? This cannot be undone.`
+      );
+
+      if (!confirmed) return;
+    }
+
+    try {
+      await api.delete(url);
+      setReloadKey((key) => key + 1);
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not delete the entry.");
+    }
+  };
+
+  const saveAmount = async (row: ReportRow, amount: number) => {
+    try {
+      await api.patch(`/reports/entry/${row.id}`, { amount });
+      setEditRow(null);
+      setReloadKey((key) => key + 1);
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not save the amount.");
+    }
+  };
 
   const filteredRows = useMemo(() => {
     if (period === "daily") {
@@ -399,6 +452,12 @@ export default function Reports() {
                 <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Amount
                 </th>
+
+                {canEdit && (
+                  <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
 
@@ -434,6 +493,28 @@ export default function Reports() {
                       {row.amount.toLocaleString()} ETB
                     </p>
                   </td>
+
+                  {canEdit && (
+                    <td className="px-5 py-5">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => setEditRow(row)}
+                          title="Edit amount"
+                          className="rounded-xl border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-50"
+                        >
+                          <Pencil size={15} />
+                        </button>
+
+                        <button
+                          onClick={() => deleteRow(row)}
+                          title="Delete"
+                          className="rounded-xl border border-red-100 p-2 text-red-500 transition hover:bg-red-50"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </motion.tr>
               ))}
             </tbody>
@@ -451,6 +532,14 @@ export default function Reports() {
             Try a different date, week, month, or year.
           </p>
         </div>
+      )}
+
+      {editRow && (
+        <EditAmountModal
+          row={editRow}
+          onClose={() => setEditRow(null)}
+          onSave={(amount) => saveAmount(editRow, amount)}
+        />
       )}
 
       <ThermalPrint>
@@ -491,6 +580,72 @@ export default function Reports() {
         <div className="tp-line" />
         <p className="tp-center tp-small">Printed: {new Date().toLocaleString("en-GB")}</p>
       </ThermalPrint>
+    </div>
+  );
+}
+
+function EditAmountModal({
+  row,
+  onClose,
+  onSave,
+}: {
+  row: ReportRow;
+  onClose: () => void;
+  onSave: (amount: number) => void;
+}) {
+  const [amount, setAmount] = useState(row.amount);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-5 backdrop-blur-sm print:hidden">
+      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-lg font-bold">Edit amount</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {row.category} · {row.type} · {row.date}
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+          >
+            <XCircle size={20} />
+          </button>
+        </div>
+
+        <label className="mb-2 mt-5 block text-sm font-medium">Amount (ETB)</label>
+
+        <input
+          type="number"
+          min="0"
+          value={amount}
+          onChange={(event) => setAmount(Number(event.target.value))}
+          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-[#123c2c] focus:bg-white"
+        />
+
+        {row.type === "Revenue" && (
+          <p className="mt-2 text-xs text-gray-500">
+            The booking balance changes with the payment.
+          </p>
+        )}
+
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold transition hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={() => amount > 0 && onSave(amount)}
+            className="flex-1 rounded-xl bg-[#123c2c] py-3 text-sm font-semibold text-white transition hover:bg-[#0d3024]"
+          >
+            Save
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

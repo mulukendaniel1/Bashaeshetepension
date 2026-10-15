@@ -8,9 +8,11 @@ import {
   Smartphone,
   UserRound,
   Wallet,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
+import { useAuth } from "../AuthContext";
 
 type PaymentMethod = "CASH" | "TELEBIRR" | "CBE_BIRR" | "BANK_TRANSFER" | "CARD" | "OTHER";
 
@@ -50,6 +52,9 @@ const methodLabels: Record<PaymentMethod, string> = {
 };
 
 export default function Payments() {
+  const { user } = useAuth();
+  const canCancel = user?.role === "OWNER" || user?.role === "MANAGER";
+
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -59,6 +64,27 @@ export default function Payments() {
   useEffect(() => {
     loadPayments();
   }, []);
+
+  // Cancel a payment recorded by mistake. The booking balance goes back up.
+  const cancelPayment = async (payment: Payment) => {
+    const reason = window.prompt(
+      `Cancel payment ${payment.receiptNumber} of ${Number(payment.amount).toLocaleString()} ETB?\nWrite a short reason:`
+    );
+
+    if (reason === null) return;
+
+    if (reason.trim().length < 3) {
+      alert("Write a short reason to cancel a payment.");
+      return;
+    }
+
+    try {
+      await api.post(`/payments/${payment.id}/cancel`, { reason: reason.trim() });
+      await loadPayments();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not cancel the payment.");
+    }
+  };
 
   async function loadPayments() {
     setLoading(true);
@@ -202,6 +228,11 @@ export default function Payments() {
                     <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                       Amount
                     </th>
+                    {canCancel && (
+                      <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Action
+                      </th>
+                    )}
                   </tr>
                 </thead>
 
@@ -255,6 +286,18 @@ export default function Payments() {
                           {Number(payment.amount).toLocaleString()} ETB
                         </p>
                       </td>
+
+                      {canCancel && (
+                        <td className="px-5 py-5 text-right">
+                          <button
+                            onClick={() => cancelPayment(payment)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-red-100 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                          >
+                            <XCircle size={14} />
+                            Cancel
+                          </button>
+                        </td>
+                      )}
                     </motion.tr>
                   ))}
                 </tbody>
@@ -294,6 +337,15 @@ export default function Payments() {
                   />
                   <InfoItem label="Date" value={formatDate(payment.createdAt)} />
                 </div>
+
+                {canCancel && (
+                  <button
+                    onClick={() => cancelPayment(payment)}
+                    className="mt-4 w-full rounded-xl border border-red-100 py-2.5 text-sm font-medium text-red-600"
+                  >
+                    Cancel payment
+                  </button>
+                )}
               </motion.div>
             ))}
           </div>

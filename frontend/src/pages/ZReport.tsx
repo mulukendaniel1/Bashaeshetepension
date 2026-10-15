@@ -8,6 +8,7 @@ import {
   Printer,
   Receipt,
   Smartphone,
+  Trash2,
   Wallet,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -20,6 +21,7 @@ type PaymentMethod = "CASH" | "TELEBIRR" | "CBE_BIRR" | "BANK_TRANSFER" | "CARD"
 type ShiftSummary = {
   id: string;
   label: string;
+  workerName?: string | null;
   status: "OPEN" | "CLOSED";
   openedAt: string;
   closedAt: string | null;
@@ -79,9 +81,12 @@ export default function ZReport() {
 
   const isPrivileged = user?.role === "OWNER" || user?.role === "MANAGER" || user?.role === "ACCOUNTANT";
 
+  // Only the owner and the manager remove payments or shifts.
+  const canEdit = user?.role === "OWNER" || user?.role === "MANAGER";
+
   useEffect(() => {
     loadShifts();
-  }, []);
+  }, [canEdit]);
 
   useEffect(() => {
     if (selectedShiftId) {
@@ -94,12 +99,17 @@ export default function ZReport() {
     setError("");
 
     try {
-      const res = await api.get<{ success: boolean; shifts: ShiftSummary[] }>("/shifts?mine=true");
+      // The owner and the manager pick any shift. Others see their own shifts.
+      const res = await api.get<{ success: boolean; shifts: ShiftSummary[] }>(
+        canEdit ? "/shifts" : "/shifts?mine=true"
+      );
       setMyShifts(res.shifts);
 
       if (res.shifts.length > 0) {
         setSelectedShiftId(res.shifts[0].id);
       } else {
+        setSelectedShiftId("");
+        setReport(null);
         setLoading(false);
       }
     } catch (err) {
@@ -136,6 +146,46 @@ export default function ZReport() {
     window.print();
   };
 
+  // Cancel a payment recorded by mistake, for example a wrong check-in amount.
+  const cancelPayment = async (payment: PaymentRow) => {
+    const reason = window.prompt(
+      `Cancel payment ${payment.receiptNumber} of ${payment.amount.toLocaleString()} ETB?\nWrite a short reason:`
+    );
+
+    if (reason === null) return;
+
+    if (reason.trim().length < 3) {
+      alert("Write a short reason to cancel a payment.");
+      return;
+    }
+
+    try {
+      await api.post(`/payments/${payment.id}/cancel`, { reason: reason.trim() });
+      await loadReport(selectedShiftId);
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not cancel the payment.");
+    }
+  };
+
+  // Delete the whole shift. The server refuses while the shift still has payments.
+  const deleteShift = async () => {
+    if (!report) return;
+
+    const confirmed = window.confirm(
+      `Delete the ${report.shift.label}? This cannot be undone. A shift with payments cannot be deleted.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/shifts/${report.shift.id}`);
+      setReport(null);
+      await loadShifts();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not delete the shift.");
+    }
+  };
+
   return (
     <div className="space-y-7">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -151,13 +201,25 @@ export default function ZReport() {
         </div>
 
         {report && (
-          <button
-            onClick={handlePrint}
-            className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200"
-          >
-            <Printer size={18} />
-            Print
-          </button>
+          <div className="flex gap-3">
+            {canEdit && (
+              <button
+                onClick={deleteShift}
+                className="flex items-center justify-center gap-2 rounded-xl border border-red-100 bg-white px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/20 dark:bg-white/5"
+              >
+                <Trash2 size={18} />
+                Delete shift
+              </button>
+            )}
+
+            <button
+              onClick={handlePrint}
+              className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200"
+            >
+              <Printer size={18} />
+              Print
+            </button>
+          </div>
         )}
       </div>
 
@@ -193,7 +255,9 @@ export default function ZReport() {
           >
             {myShifts.map((shift) => (
               <option key={shift.id} value={shift.id}>
-                {shift.label} · {formatDateTime(shift.openedAt)} · {shift.status === "OPEN" ? "Open" : "Closed"}
+                {shift.label}
+                {shift.workerName ? ` · ${shift.workerName}` : ""} · {formatDateTime(shift.openedAt)} ·{" "}
+                {shift.status === "OPEN" ? "Open" : "Closed"}
               </option>
             ))}
           </select>
@@ -325,6 +389,11 @@ export default function ZReport() {
                       <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Amount
                       </th>
+                      {canEdit && (
+                        <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                          Action
+                        </th>
+                      )}
                     </tr>
                   </thead>
 
@@ -339,6 +408,17 @@ export default function ZReport() {
                         <td className="px-3 py-4 text-sm font-semibold dark:text-white">
                           {payment.amount.toLocaleString()} ETB
                         </td>
+                        {canEdit && (
+                          <td className="px-3 py-4 text-right">
+                            <button
+                              onClick={() => cancelPayment(payment)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-red-100 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-500/20"
+                            >
+                              <Trash2 size={13} />
+                              Cancel
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -365,7 +445,7 @@ export default function ZReport() {
           <div className="tp-line" />
 
           <ThermalRow label="Shift" value={report.shift.label} />
-          <ThermalRow label="Cashier" value={report.shift.user.fullName} />
+          <ThermalRow label="Cashier" value={report.shift.workerName || report.shift.user.fullName} />
           <ThermalRow label="Opened" value={formatDateTime(report.shift.openedAt)} />
           <ThermalRow
             label="Closed"
