@@ -34,6 +34,7 @@ type PaymentRow = {
   amount: number;
   method: PaymentMethod;
   createdAt: string;
+  bankAccount: { id: string; name: string; accountType: "PENSION" | "PERSONAL" } | null;
   booking: { guest: { fullName: string }; room: { roomNumber: string } };
 };
 
@@ -70,6 +71,19 @@ const methodLabels: Record<PaymentMethod, string> = {
   CARD: "Card",
   OTHER: "Other",
 };
+
+// Who received the money, as shown on the printed Z Report.
+// Cash shows as "Cash". A payment to a bank or wallet account shows the capital
+// first letter of that account's name, for example Y for Yared Ababu.
+function receivedVia(payment: PaymentRow): string {
+  if (payment.method === "CASH") return "Cash";
+
+  const name = payment.bankAccount?.name?.trim();
+  if (name) return name.charAt(0).toUpperCase();
+
+  // The cashier did not pick an account. Show the method so the line is not blank.
+  return methodLabels[payment.method];
+}
 
 export default function ZReport() {
   const { user } = useAuth();
@@ -135,6 +149,21 @@ export default function ZReport() {
   const methodEntries = useMemo(() => {
     if (!report) return [];
     return Object.entries(report.totalsByMethod) as [PaymentMethod, number][];
+  }, [report]);
+
+  const receivedByEntries = useMemo(() => {
+    if (!report) return [];
+
+    const totals = new Map<string, { amount: number; count: number }>();
+
+    for (const payment of report.payments) {
+      const key = receivedVia(payment);
+      const current = totals.get(key) || { amount: 0, count: 0 };
+
+      totals.set(key, { amount: current.amount + Number(payment.amount), count: current.count + 1 });
+    }
+
+    return Array.from(totals.entries());
   }, [report]);
 
   const bankAccountEntries = useMemo(() => {
@@ -404,7 +433,14 @@ export default function ZReport() {
                         <td className="px-3 py-4 text-sm dark:text-gray-200">
                           {payment.booking.guest.fullName} · Room {payment.booking.room.roomNumber}
                         </td>
-                        <td className="px-3 py-4 text-sm dark:text-gray-200">{methodLabels[payment.method]}</td>
+                        <td className="px-3 py-4 text-sm dark:text-gray-200">
+                          {methodLabels[payment.method]}
+                          {payment.bankAccount && (
+                            <span className="block text-xs text-gray-500 dark:text-gray-400">
+                              {payment.bankAccount.name}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-3 py-4 text-sm font-semibold dark:text-white">
                           {payment.amount.toLocaleString()} ETB
                         </td>
@@ -458,21 +494,15 @@ export default function ZReport() {
           <ThermalRow label="Payments" value={report.totalPaymentCount.toString()} />
 
           <div className="tp-line" />
-          <p className="tp-heading">By Method</p>
-          {methodEntries.length === 0 && <p>No payments.</p>}
-          {methodEntries.map(([method, amount]) => (
-            <ThermalRow key={method} label={methodLabels[method]} value={`${amount.toLocaleString()} ETB`} />
+          <p className="tp-heading">Received by</p>
+          {receivedByEntries.length === 0 && <p>No payments.</p>}
+          {receivedByEntries.map(([label, total]) => (
+            <ThermalRow
+              key={label}
+              label={`${label} (${total.count})`}
+              value={`${total.amount.toLocaleString()} ETB`}
+            />
           ))}
-
-          {bankAccountEntries.length > 0 && (
-            <>
-              <div className="tp-line" />
-              <p className="tp-heading">Bank Accounts</p>
-              {bankAccountEntries.map(([account, amount]) => (
-                <ThermalRow key={account} label={account} value={`${amount.toLocaleString()} ETB`} />
-              ))}
-            </>
-          )}
 
           <div className="tp-line" />
           <p className="tp-heading">Cash</p>
@@ -505,7 +535,7 @@ export default function ZReport() {
             <div key={payment.id} className="tp-item">
               <ThermalRow label={payment.receiptNumber} value={payment.amount.toLocaleString()} />
               <p className="tp-sub">
-                {payment.booking.guest.fullName} - Room {payment.booking.room.roomNumber} - {methodLabels[payment.method]}
+                {receivedVia(payment)} - {payment.booking.guest.fullName} - Room {payment.booking.room.roomNumber}
               </p>
             </div>
           ))}

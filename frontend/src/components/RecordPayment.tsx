@@ -64,6 +64,12 @@ export default function RecordPayment({
       return;
     }
 
+    // The Z Report prints the first letter of this account, so the choice is required.
+    if (needsBank && accounts.length > 0 && !bankAccountId) {
+      alert("Choose the account that received the money.");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -138,7 +144,7 @@ export default function RecordPayment({
             onChange={(event) => setBankAccountId(event.target.value)}
             className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#123c2c]"
           >
-            <option value="">Not sure</option>
+            <option value="">Choose the account</option>
             {accounts.map((account) => (
               <option key={account.id} value={account.id}>
                 {account.name} ({account.accountType === "PENSION" ? "Pension" : "Personal"})
@@ -146,7 +152,7 @@ export default function RecordPayment({
             ))}
           </select>
           <p className="mt-1.5 text-xs text-gray-500">
-            The system checks this payment against the bank SMS and marks it Verified.
+            The Z Report prints the first letter of this account name. The system also checks the payment against the bank SMS.
           </p>
         </div>
       )}
