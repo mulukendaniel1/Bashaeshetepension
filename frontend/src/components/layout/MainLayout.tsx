@@ -22,8 +22,26 @@ WalletCards,
 Wrench,
 X,
 } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../../AuthContext";
+
+const roleLabels: Record<string, string> = {
+OWNER: "Owner",
+MANAGER: "Manager",
+RECEPTIONIST: "Receptionist",
+ACCOUNTANT: "Accountant",
+STAFF: "Staff",
+};
+
+function initials(name: string) {
+return name
+.split(" ")
+.filter(Boolean)
+.slice(0, 2)
+.map((part) => part[0].toUpperCase())
+.join("");
+}
 
 
 const navigation = [
@@ -49,11 +67,19 @@ const navigation = [
 
 export default function MainLayout() {
 const [mobileOpen, setMobileOpen] = useState(false);
+const { user, logout } = useAuth();
+const navigate = useNavigate();
+
+// Sign out and go back to the login page.
+const signOut = () => {
+logout();
+navigate("/login", { replace: true });
+};
 
 return (
 <div className="min-h-screen bg-[#f6f8f6] text-[#17211b] dark:bg-[#10140f] dark:text-gray-100">
 <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-black/5 bg-white lg:block dark:border-white/10 dark:bg-[#161d18]">
-<Sidebar />
+<Sidebar onSignOut={signOut} />
 </aside>
 
   {mobileOpen && (
@@ -80,7 +106,7 @@ return (
         </button>
       </div>
 
-      <Navigation closeMobile={() => setMobileOpen(false)} />
+      <Navigation closeMobile={() => setMobileOpen(false)} onSignOut={signOut} />
     </div>
   </motion.aside>
 
@@ -108,9 +134,28 @@ return (
       <div className="flex items-center gap-3">
         
 
-        <div className="hidden h-10 w-10 items-center justify-center rounded-full bg-[#d8a84e] font-bold text-white shadow-sm sm:flex">
-          BE
-        </div>
+        {user && (
+          <div className="hidden items-center gap-3 sm:flex">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d8a84e] font-bold text-white shadow-sm">
+              {initials(user.fullName)}
+            </div>
+
+            <div className="leading-tight">
+              <p className="text-sm font-semibold dark:text-white">{user.fullName}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {roleLabels[user.role] || user.role}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={signOut}
+          className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5"
+        >
+          <LogOut size={16} />
+          <span className="hidden sm:inline">Log out</span>
+        </button>
       </div>
     </header>
 
@@ -123,14 +168,14 @@ return (
 );
 }
 
-function Sidebar() {
+function Sidebar({ onSignOut }: { onSignOut: () => void }) {
 return (
 <div className="flex h-full flex-col">
 <div className="border-b border-black/5 px-5 py-5 dark:border-white/10">
 <Brand />
 </div>
 
-  <Navigation />
+  <Navigation onSignOut={onSignOut} />
 </div>
 
 );
@@ -154,8 +199,10 @@ return (
 
 function Navigation({
 closeMobile,
+onSignOut,
 }: {
 closeMobile?: () => void;
+onSignOut: () => void;
 }) {
 return (
 <nav className="flex-1 space-y-1 overflow-y-auto p-4">
@@ -218,6 +265,17 @@ const Icon = item.icon;
 
     Settings
   </NavLink>
+
+  <button
+    onClick={() => {
+      closeMobile?.();
+      onSignOut();
+    }}
+    className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-all hover:bg-red-50 dark:hover:bg-red-500/10"
+  >
+    <LogOut size={18} />
+    Log out
+  </button>
 </nav>
 
 );

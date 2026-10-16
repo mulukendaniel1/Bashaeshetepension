@@ -14,7 +14,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
 import { useAuth } from "../AuthContext";
-import ThermalPrint, { ThermalRow } from "../components/ThermalPrint";
+import PrintSheet from "../components/PrintSheet";
 
 type PaymentMethod = "CASH" | "TELEBIRR" | "CBE_BIRR" | "BANK_TRANSFER" | "CARD" | "OTHER";
 
@@ -319,7 +319,7 @@ export default function ZReport() {
             />
 
             <SummaryCard
-              title="Expected Closing Cash"
+              title="Total Cash (opening + cash collected)"
               value={`${report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB`}
               icon={<Calculator size={20} />}
             />
@@ -370,19 +370,31 @@ export default function ZReport() {
           <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#1a231d]">
             <h3 className="mb-5 font-bold dark:text-white">Cash Reconciliation</h3>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <p className="-mt-3 mb-5 text-sm text-gray-500 dark:text-gray-400">
+              Total cash = opening cash + cash collected. Compare it with the cash you count when the
+              shift closes.
+            </p>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <ReconciliationItem
                 label="Opening Cash"
                 value={`${report.cashReconciliation.openingCash.toLocaleString()} ETB`}
               />
               <ReconciliationItem
-                label="Cash Collected"
+                label="+ Cash Collected"
                 value={`${report.cashReconciliation.cashCollected.toLocaleString()} ETB`}
               />
               <ReconciliationItem
-                label="Expected Closing"
+                label="= Total Cash"
                 value={`${report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB`}
               />
+
+              {report.cashReconciliation.actualClosingCash !== null && (
+                <ReconciliationItem
+                  label="Counted Closing Cash"
+                  value={`${report.cashReconciliation.actualClosingCash.toLocaleString()} ETB`}
+                />
+              )}
 
               {report.cashReconciliation.actualClosingCash !== null ? (
                 <ReconciliationItem
@@ -466,83 +478,179 @@ export default function ZReport() {
       ) : null}
 
       {report && (
-        <ThermalPrint>
-          <img
-            src="/logo.png"
-            alt=""
-            className="tp-logo"
-            onError={(event) => {
-              event.currentTarget.style.display = "none";
-            }}
-          />
-          <p className="tp-center tp-title">Basha Eshete Pension</p>
-          <p className="tp-center tp-bold">Z REPORT</p>
-
-          <div className="tp-line" />
-
-          <ThermalRow label="Shift" value={report.shift.label} />
-          <ThermalRow label="Cashier" value={report.shift.workerName || report.shift.user.fullName} />
-          <ThermalRow label="Opened" value={formatDateTime(report.shift.openedAt)} />
-          <ThermalRow
-            label="Closed"
-            value={report.shift.closedAt ? formatDateTime(report.shift.closedAt) : "Still open"}
-          />
-
-          <div className="tp-line" />
-
-          <ThermalRow label="Total Collected" value={`${report.totalCollected.toLocaleString()} ETB`} bold />
-          <ThermalRow label="Payments" value={report.totalPaymentCount.toString()} />
-
-          <div className="tp-line" />
-          <p className="tp-heading">Received by</p>
-          {receivedByEntries.length === 0 && <p>No payments.</p>}
-          {receivedByEntries.map(([label, total]) => (
-            <ThermalRow
-              key={label}
-              label={`${label} (${total.count})`}
-              value={`${total.amount.toLocaleString()} ETB`}
+        <PrintSheet>
+          <div className="a4-header">
+            <img
+              src="/logo.png"
+              alt=""
+              className="a4-logo"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
             />
-          ))}
+            <p className="a4-title">Basha Eshete Pension</p>
+            <p className="a4-doc">Z Report</p>
+            <p className="a4-meta">
+              {report.shift.label} · {report.shift.workerName || report.shift.user.fullName}
+            </p>
+          </div>
 
-          <div className="tp-line" />
-          <p className="tp-heading">Cash</p>
-          <ThermalRow label="Opening" value={`${report.cashReconciliation.openingCash.toLocaleString()} ETB`} />
-          <ThermalRow label="Collected" value={`${report.cashReconciliation.cashCollected.toLocaleString()} ETB`} />
-          <ThermalRow
-            label="Expected Close"
-            value={`${report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB`}
-          />
-          {report.cashReconciliation.actualClosingCash !== null ? (
-            <>
-              <ThermalRow
-                label="Actual Close"
-                value={`${report.cashReconciliation.actualClosingCash.toLocaleString()} ETB`}
-              />
-              <ThermalRow
-                label="Variance"
-                value={`${report.cashReconciliation.variance! >= 0 ? "+" : ""}${report.cashReconciliation.variance!.toLocaleString()} ETB`}
-                bold
-              />
-            </>
-          ) : (
-            <ThermalRow label="Variance" value="Shift open" />
-          )}
+          <table className="a4-table">
+            <tbody>
+              <tr>
+                <th>Shift</th>
+                <td>{report.shift.label}</td>
+                <th>Worker</th>
+                <td>{report.shift.workerName || report.shift.user.fullName}</td>
+              </tr>
+              <tr>
+                <th>Opened</th>
+                <td>{formatDateTime(report.shift.openedAt)}</td>
+                <th>Closed</th>
+                <td>{report.shift.closedAt ? formatDateTime(report.shift.closedAt) : "Still open"}</td>
+              </tr>
+            </tbody>
+          </table>
 
-          <div className="tp-line" />
-          <p className="tp-heading">Payments</p>
-          {report.payments.length === 0 && <p>No payments.</p>}
-          {report.payments.map((payment) => (
-            <div key={payment.id} className="tp-item">
-              <ThermalRow label={payment.receiptNumber} value={payment.amount.toLocaleString()} />
-              <p className="tp-sub">
-                {receivedVia(payment)} - {payment.booking.guest.fullName} - Room {payment.booking.room.roomNumber}
-              </p>
+          <div className="a4-cards">
+            <div className="a4-card">
+              <span>Total Collected</span>
+              <strong>{report.totalCollected.toLocaleString()} ETB</strong>
             </div>
-          ))}
+            <div className="a4-card">
+              <span>Payments</span>
+              <strong>{report.totalPaymentCount}</strong>
+            </div>
+            <div className="a4-card">
+              <span>Opening Cash</span>
+              <strong>{report.cashReconciliation.openingCash.toLocaleString()} ETB</strong>
+            </div>
+            <div className="a4-card">
+              <span>Total Cash</span>
+              <strong>{report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB</strong>
+            </div>
+          </div>
 
-          <div className="tp-line" />
-          <p className="tp-center tp-small">Printed: {new Date().toLocaleString("en-GB")}</p>
-        </ThermalPrint>
+          <p className="a4-section">Received by</p>
+
+          <table className="a4-table">
+            <thead>
+              <tr>
+                <th>Received by</th>
+                <th className="num">Payments</th>
+                <th className="num">Amount (ETB)</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {receivedByEntries.length === 0 && (
+                <tr>
+                  <td colSpan={3}>No payments.</td>
+                </tr>
+              )}
+
+              {receivedByEntries.map(([label, total]) => (
+                <tr key={label}>
+                  <td>{label}</td>
+                  <td className="num">{total.count}</td>
+                  <td className="num">{total.amount.toLocaleString()}</td>
+                </tr>
+              ))}
+
+              {receivedByEntries.length > 0 && (
+                <tr className="total">
+                  <td>Total collected</td>
+                  <td className="num">{report.totalPaymentCount}</td>
+                  <td className="num">{report.totalCollected.toLocaleString()}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          <p className="a4-section">Cash reconciliation</p>
+
+          <table className="a4-table">
+            <tbody>
+              <tr>
+                <td>Opening cash</td>
+                <td className="num">{report.cashReconciliation.openingCash.toLocaleString()} ETB</td>
+              </tr>
+              <tr>
+                <td>+ Cash collected (cash payments of this shift)</td>
+                <td className="num">{report.cashReconciliation.cashCollected.toLocaleString()} ETB</td>
+              </tr>
+              <tr className="total">
+                <td>= Total cash (opening cash + cash collected)</td>
+                <td className="num">{report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB</td>
+              </tr>
+
+              {report.cashReconciliation.actualClosingCash !== null ? (
+                <>
+                  <tr>
+                    <td>Counted closing cash</td>
+                    <td className="num">
+                      {report.cashReconciliation.actualClosingCash.toLocaleString()} ETB
+                    </td>
+                  </tr>
+                  <tr className="total">
+                    <td>Variance</td>
+                    <td className="num">
+                      {report.cashReconciliation.variance! >= 0 ? "+" : ""}
+                      {report.cashReconciliation.variance!.toLocaleString()} ETB
+                    </td>
+                  </tr>
+                </>
+              ) : (
+                <tr className="total">
+                  <td>Variance</td>
+                  <td className="num">Shift still open</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          <p className="a4-section">Payments</p>
+
+          <table className="a4-table">
+            <thead>
+              <tr>
+                <th>Receipt</th>
+                <th>Received by</th>
+                <th>Guest</th>
+                <th>Room</th>
+                <th className="num">Amount (ETB)</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {report.payments.length === 0 && (
+                <tr>
+                  <td colSpan={5}>No payments.</td>
+                </tr>
+              )}
+
+              {report.payments.map((payment) => (
+                <tr key={payment.id}>
+                  <td>{payment.receiptNumber}</td>
+                  <td>{receivedVia(payment)}</td>
+                  <td>{payment.booking.guest.fullName}</td>
+                  <td>{payment.booking.room.roomNumber}</td>
+                  <td className="num">{payment.amount.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="a4-signatures">
+            <div className="a4-sign">Cashier signature</div>
+            <div className="a4-sign">Manager signature</div>
+          </div>
+
+          <div className="a4-footer">
+            <span>Printed: {new Date().toLocaleString("en-GB")}</span>
+            <span>Basha Eshete Pension</span>
+          </div>
+        </PrintSheet>
       )}
     </div>
   );

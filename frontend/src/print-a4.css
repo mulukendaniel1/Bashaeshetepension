@@ -1,0 +1,174 @@
+/* A4 printing for the Reports and Z Report pages */
+
+.a4-print {
+  display: none;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 14mm;
+}
+
+@media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide the whole app. Only the sheet prints. */
+  #root {
+    display: none !important;
+  }
+
+  .a4-print {
+    display: block !important;
+    color: #000;
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .a4-print * {
+    box-sizing: border-box;
+  }
+
+  .a4-header {
+    text-align: center;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #123c2c;
+  }
+
+  .a4-logo {
+    display: block;
+    height: 56px;
+    width: auto;
+    margin: 0 auto 6px auto;
+  }
+
+  .a4-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #123c2c;
+  }
+
+  .a4-doc {
+    margin: 2px 0 0 0;
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .a4-meta {
+    margin: 4px 0 0 0;
+    font-size: 11px;
+    color: #444;
+  }
+
+  .a4-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  .a4-card {
+    border: 1px solid #b8c4bd;
+    padding: 8px 10px;
+    border-radius: 4px;
+  }
+
+  .a4-card span {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #555;
+  }
+
+  .a4-card strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 15px;
+  }
+
+  .a4-section {
+    margin: 18px 0 6px 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #123c2c;
+  }
+
+  .a4-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .a4-table th {
+    background: #eef3f0 !important;
+    border: 1px solid #b8c4bd;
+    padding: 6px 8px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .a4-table td {
+    border: 1px solid #d5ddd8;
+    padding: 6px 8px;
+    vertical-align: top;
+  }
+
+  .a4-table thead {
+    display: table-header-group;
+  }
+
+  .a4-table tr {
+    break-inside: avoid;
+  }
+
+  .a4-table .num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .a4-table .total td {
+    font-weight: 700;
+    background: #f6f8f6 !important;
+  }
+
+  .a4-signatures {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 48px;
+    break-inside: avoid;
+  }
+
+  .a4-sign {
+    border-top: 1px solid #000;
+    padding-top: 4px;
+    text-align: center;
+    font-size: 11px;
+  }
+
+  .a4-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 6px;
+    border-top: 1px solid #ccc;
+    font-size: 10px;
+    color: #555;
+  }
+}

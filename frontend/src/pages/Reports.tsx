@@ -18,7 +18,7 @@ import { useAuth } from "../AuthContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import ThermalPrint, { ThermalRow } from "../components/ThermalPrint";
+import PrintSheet from "../components/PrintSheet";
 
 /**
  * Requires these packages:
@@ -542,44 +542,77 @@ export default function Reports() {
         />
       )}
 
-      <ThermalPrint>
-        <img
-          src="/logo.png"
-          alt=""
-          className="tp-logo"
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-          }}
-        />
-        <p className="tp-center tp-title">Basha Eshete Pension</p>
-        <p className="tp-center">Financial Report</p>
-        <p className="tp-center">{periodLabel}</p>
-        <p className="tp-center tp-small">TIN: {TIN_NUMBER}</p>
+      <PrintSheet>
+        <div className="a4-header">
+          <img
+            src="/logo.png"
+            alt=""
+            className="a4-logo"
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
+          <p className="a4-title">Basha Eshete Pension</p>
+          <p className="a4-doc">Financial Report</p>
+          <p className="a4-meta">
+            {periodLabel} · TIN: {TIN_NUMBER}
+          </p>
+        </div>
 
-        <div className="tp-line" />
-
-        <ThermalRow label="Total Revenue" value={`${totalRevenue.toLocaleString()} ETB`} />
-        <ThermalRow label="Total Expenses" value={`${totalExpenses.toLocaleString()} ETB`} />
-        <ThermalRow label="Net Profit" value={`${netProfit.toLocaleString()} ETB`} bold />
-        <ThermalRow label="Profit Margin" value={`${profitMargin}%`} />
-
-        <div className="tp-line" />
-        <p className="tp-heading">Details</p>
-
-        {filteredRows.length === 0 && <p>No data for this period.</p>}
-
-        {filteredRows.map((row) => (
-          <div key={row.id} className="tp-item">
-            <ThermalRow label={row.category} value={row.amount.toLocaleString()} />
-            <p className="tp-sub">
-              {row.type} - {formatDate(row.date)}
-            </p>
+        <div className="a4-cards">
+          <div className="a4-card">
+            <span>Total Revenue</span>
+            <strong>{totalRevenue.toLocaleString()} ETB</strong>
           </div>
-        ))}
+          <div className="a4-card">
+            <span>Total Expenses</span>
+            <strong>{totalExpenses.toLocaleString()} ETB</strong>
+          </div>
+          <div className="a4-card">
+            <span>Net Profit</span>
+            <strong>{netProfit.toLocaleString()} ETB</strong>
+          </div>
+          <div className="a4-card">
+            <span>Profit Margin</span>
+            <strong>{profitMargin}%</strong>
+          </div>
+        </div>
 
-        <div className="tp-line" />
-        <p className="tp-center tp-small">Printed: {new Date().toLocaleString("en-GB")}</p>
-      </ThermalPrint>
+        <p className="a4-section">Details</p>
+
+        <table className="a4-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th className="num">Amount (ETB)</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filteredRows.length === 0 && (
+              <tr>
+                <td colSpan={4}>No data for this period.</td>
+              </tr>
+            )}
+
+            {filteredRows.map((row) => (
+              <tr key={row.id}>
+                <td>{row.category}</td>
+                <td>{row.type}</td>
+                <td>{formatDate(row.date)}</td>
+                <td className="num">{row.amount.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="a4-footer">
+          <span>Printed: {new Date().toLocaleString("en-GB")}</span>
+          <span>Basha Eshete Pension</span>
+        </div>
+      </PrintSheet>
     </div>
   );
 }
