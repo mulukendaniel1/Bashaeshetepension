@@ -1,20 +1,29 @@
 import { motion } from "framer-motion";
 import {
   Banknote,
+  CalendarPlus,
   Calculator,
   CreditCard,
   FileBarChart,
   Landmark,
+  LogIn,
+  LogOut,
+  Pencil,
   Printer,
   Receipt,
   Smartphone,
   Trash2,
   Wallet,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
 import { useAuth } from "../AuthContext";
 import PrintSheet from "../components/PrintSheet";
+import ChangeGuestModal from "../components/ChangeGuestModal";
+import ExtendModal from "../components/ExtendModal";
+import RecordPayment from "../components/RecordPayment";
+import { cancelReservation } from "../lib/bookingactions";
 
 type PaymentMethod = "CASH" | "TELEBIRR" | "CBE_BIRR" | "BANK_TRANSFER" | "CARD" | "OTHER";
 
@@ -52,6 +61,22 @@ type ShiftReport = {
     actualClosingCash: number | null;
     variance: number | null;
   };
+};
+
+// A reserved or booked room shown in the Z Report page. These are not printed.
+type ShiftBooking = {
+  id: string;
+  bookingNumber: string;
+  checkInDate: string;
+  checkOutDate: string;
+  numberOfGuests: number;
+  pricePerNight: number;
+  totalAmount: number;
+  amountPaid: number;
+  balance: number;
+  status: string;
+  guest: { id: string; fullName: string; phone: string };
+  room: { id: string; roomNumber: string; roomType: { name: string } };
 };
 
 const methodIcons: Record<PaymentMethod, React.ReactNode> = {
@@ -92,6 +117,11 @@ export default function ZReport() {
   const [report, setReport] = useState<ShiftReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reserved, setReserved] = useState<ShiftBooking[]>([]);
+  const [booked, setBooked] = useState<ShiftBooking[]>([]);
+  const [payFor, setPayFor] = useState<{ booking: ShiftBooking; mode: "checkin" | "checkout" } | null>(null);
+  const [renameFor, setRenameFor] = useState<ShiftBooking | null>(null);
+  const [extendFor, setExtendFor] = useState<ShiftBooking | null>(null);
 
   const isPrivileged = user?.role === "OWNER" || user?.role === "MANAGER" || user?.role === "ACCOUNTANT";
 
@@ -105,6 +135,7 @@ export default function ZReport() {
   useEffect(() => {
     if (selectedShiftId) {
       loadReport(selectedShiftId);
+      loadShiftRooms(selectedShiftId);
     }
   }, [selectedShiftId]);
 
@@ -132,8 +163,28 @@ export default function ZReport() {
     }
   }
 
-  async function loadReport(shiftId: string) {
-    setLoading(true);
+  // The reserved and the booked rooms of the shift. They are not printed.
+  async function loadShiftRooms(shiftId: string) {
+    try {
+      const res = await api.get<{ success: boolean; reserved: ShiftBooking[]; booked: ShiftBooking[] }>(
+        `/zreport/shift/${shiftId}/rooms`
+      );
+      setReserved(res.reserved);
+      setBooked(res.booked);
+    } catch {
+      setReserved([]);
+      setBooked([]);
+    }
+  }
+
+  // Refresh the totals and the room lists without the loading screen.
+  async function refreshAll() {
+    if (!selectedShiftId) return;
+    await Promise.all([loadReport(selectedShiftId, true), loadShiftRooms(selectedShiftId)]);
+  }
+
+  async function loadReport(shiftId: string, silent = false) {
+    if (!silent) setLoading(true);
     setError("");
 
     try {
@@ -166,13 +217,28 @@ export default function ZReport() {
     return Array.from(totals.entries());
   }, [report]);
 
-  // Money that did not enter the drawer: CBE Birr, Telebirr, bank transfers, cards.
-  const transfersTotal = report ? report.totalCollected - report.cashReconciliation.cashCollected : 0;
+  // Collected by account: every payment that is not cash (CBE Birr, Telebirr, bank, card).
+  const collectedByAccount = report ? report.totalCollected - report.cashReconciliation.cashCollected : 0;
 
-  // Opening cash + cash collected + transfers.
-  const grandTotal = report ? report.cashReconciliation.openingCash + report.totalCollected : 0;
+  // Collected by account + cash collected = total money.
+  const grandTotal = report ? report.totalCollected : 0;
 
-  const transferMethodEntries = methodEntries.filter(([method]) => method !== "CASH");
+  // The same money, split by the account that received it.
+  const accountEntries = useMemo(() => {
+    if (!report) return [];
+
+    const totals = new Map<string, number>();
+
+    for (const payment of report.payments) {
+      if (payment.method === "CASH") continue;
+
+      const key = payment.bankAccount?.name || methodLabels[payment.method];
+      totals.set(key, (totals.get(key) || 0) + Number(payment.amount));
+    }
+
+    return Array.from(totals.entries());
+  }, [report]);
+
   const transferReceivedEntries = receivedByEntries.filter(([label]) => label !== "Cash");
 
   const bankAccountEntries = useMemo(() => {
@@ -182,6 +248,49 @@ export default function ZReport() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const changeStatus = async (booking: ShiftBooking, status: "CHECKED_IN" | "CHECKED_OUT") => {
+    try {
+      await api.patch(`/bookings/${booking.id}/status`, { status });
+      await refreshAll();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Could not update the booking.");
+    }
+  };
+
+  // Check-in needs a payment on record. Without one, the cashier picks the method first.
+  const checkInRoom = async (booking: ShiftBooking) => {
+    if (Number(booking.amountPaid) <= 0) {
+      setPayFor({ booking, mode: "checkin" });
+      return;
+    }
+
+    if (window.confirm(`Check in ${booking.guest.fullName} to Room ${booking.room.roomNumber}?`)) {
+      await changeStatus(booking, "CHECKED_IN");
+    }
+  };
+
+  // Check-out needs a zero balance. Otherwise the cashier takes the balance first.
+  const checkOutRoom = async (booking: ShiftBooking) => {
+    if (Number(booking.balance) > 0) {
+      setPayFor({ booking, mode: "checkout" });
+      return;
+    }
+
+    if (
+      window.confirm(
+        `Check out ${booking.guest.fullName} from Room ${booking.room.roomNumber}? The room goes to Cleaning.`
+      )
+    ) {
+      await changeStatus(booking, "CHECKED_OUT");
+    }
+  };
+
+  const cancelRoom = async (booking: ShiftBooking) => {
+    if (await cancelReservation(booking, canEdit)) {
+      await refreshAll();
+    }
   };
 
   // Cancel a payment recorded by mistake, for example a wrong check-in amount.
@@ -199,7 +308,7 @@ export default function ZReport() {
 
     try {
       await api.post(`/payments/${payment.id}/cancel`, { reason: reason.trim() });
-      await loadReport(selectedShiftId);
+      await refreshAll();
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Could not cancel the payment.");
     }
@@ -310,8 +419,8 @@ export default function ZReport() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryCard
-              title="Total Collected"
-              value={`${report.totalCollected.toLocaleString()} ETB`}
+              title="Collected by Account"
+              value={`${collectedByAccount.toLocaleString()} ETB`}
               icon={<Wallet size={20} />}
             />
 
@@ -322,13 +431,13 @@ export default function ZReport() {
             />
 
             <SummaryCard
-              title="Opening Cash"
-              value={`${report.cashReconciliation.openingCash.toLocaleString()} ETB`}
-              icon={<Calculator size={20} />}
+              title="Cash Collected"
+              value={`${report.cashReconciliation.cashCollected.toLocaleString()} ETB`}
+              icon={<Banknote size={20} />}
             />
 
             <SummaryCard
-              title="Total Money (opening + cash + transfers)"
+              title="Total Money"
               value={`${grandTotal.toLocaleString()} ETB`}
               icon={<Calculator size={20} />}
             />
@@ -380,30 +489,26 @@ export default function ZReport() {
             <h3 className="mb-5 font-bold dark:text-white">Total Money</h3>
 
             <p className="-mt-3 mb-5 text-sm text-gray-500 dark:text-gray-400">
-              Total = opening cash + cash collected + transfers (CBE Birr, Telebirr, bank).
+              Collected by account + cash collected = total money.
             </p>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-3">
               <ReconciliationItem
-                label="Opening Cash"
-                value={`${report.cashReconciliation.openingCash.toLocaleString()} ETB`}
+                label="Collected by Account"
+                value={`${collectedByAccount.toLocaleString()} ETB`}
               />
               <ReconciliationItem
                 label="+ Cash Collected"
                 value={`${report.cashReconciliation.cashCollected.toLocaleString()} ETB`}
               />
-              <ReconciliationItem
-                label="+ Transfers"
-                value={`${transfersTotal.toLocaleString()} ETB`}
-              />
               <ReconciliationItem label="= Total Money" value={`${grandTotal.toLocaleString()} ETB`} />
             </div>
 
-            {transferMethodEntries.length > 0 && (
+            {accountEntries.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-x-8 gap-y-2 border-t border-gray-100 pt-4 text-sm dark:border-white/10">
-                {transferMethodEntries.map(([method, amount]) => (
-                  <span key={method} className="text-gray-600 dark:text-gray-300">
-                    {methodLabels[method]}:{" "}
+                {accountEntries.map(([name, amount]) => (
+                  <span key={name} className="text-gray-600 dark:text-gray-300">
+                    {name}:{" "}
                     <span className="font-semibold dark:text-white">{amount.toLocaleString()} ETB</span>
                   </span>
                 ))}
@@ -416,12 +521,19 @@ export default function ZReport() {
 
             <p className="-mt-3 mb-5 text-sm text-gray-500 dark:text-gray-400">
               Only cash enters the drawer. The drawer should hold opening cash + cash collected.
-              Transfers are not part of this check.
             </p>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <ReconciliationItem
-                label="Cash in drawer should be"
+                label="Opening Cash"
+                value={`${report.cashReconciliation.openingCash.toLocaleString()} ETB`}
+              />
+              <ReconciliationItem
+                label="+ Cash Collected"
+                value={`${report.cashReconciliation.cashCollected.toLocaleString()} ETB`}
+              />
+              <ReconciliationItem
+                label="= Cash in drawer should be"
                 value={`${report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB`}
               />
 
@@ -442,6 +554,74 @@ export default function ZReport() {
               )}
             </div>
           </div>
+
+          <RoomsTable
+            title="Reserved in this shift"
+            hint="Not printed. Check in a guest after the payment, rename the guest, or cancel the reservation."
+            empty="No reserved rooms for this shift."
+            bookings={reserved}
+            renderActions={(booking) => (
+              <>
+                <button
+                  onClick={() => checkInRoom(booking)}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#123c2c] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#0d3024]"
+                >
+                  <LogIn size={13} />
+                  Check-in
+                </button>
+
+                <button
+                  onClick={() => setRenameFor(booking)}
+                  className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-medium transition hover:bg-gray-50 dark:border-white/10"
+                >
+                  <Pencil size={13} />
+                  Rename
+                </button>
+
+                <button
+                  onClick={() => cancelRoom(booking)}
+                  className="flex items-center gap-1.5 rounded-xl border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-50"
+                >
+                  <XCircle size={13} />
+                  Cancel
+                </button>
+              </>
+            )}
+          />
+
+          <RoomsTable
+            title="Booked in this shift"
+            hint="Not printed. Guests in their rooms. Check them out, extend the stay, or rename the guest."
+            empty="No booked rooms for this shift."
+            bookings={booked}
+            renderActions={(booking) => (
+              <>
+                <button
+                  onClick={() => checkOutRoom(booking)}
+                  className="flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-700"
+                >
+                  <LogOut size={13} />
+                  Check-out
+                </button>
+
+                <button
+                  onClick={() => setExtendFor(booking)}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#123c2c]/30 px-3 py-1.5 text-xs font-medium text-[#123c2c] transition hover:bg-[#123c2c]/5 dark:text-white"
+                >
+                  <CalendarPlus size={13} />
+                  Extend
+                </button>
+
+                <button
+                  onClick={() => setRenameFor(booking)}
+                  className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-medium transition hover:bg-gray-50 dark:border-white/10"
+                >
+                  <Pencil size={13} />
+                  Rename
+                </button>
+              </>
+            )}
+          />
 
           <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#1a231d]">
             <h3 className="mb-5 font-bold dark:text-white">Payments This Shift</h3>
@@ -549,16 +729,16 @@ export default function ZReport() {
 
           <div className="a4-cards">
             <div className="a4-card">
-              <span>Total Collected</span>
-              <strong>{report.totalCollected.toLocaleString()} ETB</strong>
+              <span>Collected by Account</span>
+              <strong>{collectedByAccount.toLocaleString()} ETB</strong>
             </div>
             <div className="a4-card">
               <span>Payments</span>
               <strong>{report.totalPaymentCount}</strong>
             </div>
             <div className="a4-card">
-              <span>Opening Cash</span>
-              <strong>{report.cashReconciliation.openingCash.toLocaleString()} ETB</strong>
+              <span>Cash Collected</span>
+              <strong>{report.cashReconciliation.cashCollected.toLocaleString()} ETB</strong>
             </div>
             <div className="a4-card">
               <span>Total Money</span>
@@ -606,31 +786,27 @@ export default function ZReport() {
 
           <table className="a4-table">
             <tbody>
-              <tr>
-                <td>Opening cash</td>
-                <td className="num">{report.cashReconciliation.openingCash.toLocaleString()} ETB</td>
-              </tr>
-              <tr>
-                <td>+ Cash collected</td>
-                <td className="num">{report.cashReconciliation.cashCollected.toLocaleString()} ETB</td>
-              </tr>
-
               {transferReceivedEntries.length === 0 && (
                 <tr>
-                  <td>+ Transfers</td>
+                  <td>Collected by account</td>
                   <td className="num">0 ETB</td>
                 </tr>
               )}
 
               {transferReceivedEntries.map(([label, total]) => (
                 <tr key={label}>
-                  <td>+ Transfers to {label}</td>
+                  <td>Collected by account {label}</td>
                   <td className="num">{total.amount.toLocaleString()} ETB</td>
                 </tr>
               ))}
 
+              <tr>
+                <td>+ Cash collected</td>
+                <td className="num">{report.cashReconciliation.cashCollected.toLocaleString()} ETB</td>
+              </tr>
+
               <tr className="total">
-                <td>= Total money (opening cash + cash + transfers)</td>
+                <td>= Total money (collected by account + cash collected)</td>
                 <td className="num">{grandTotal.toLocaleString()} ETB</td>
               </tr>
             </tbody>
@@ -641,7 +817,15 @@ export default function ZReport() {
           <table className="a4-table">
             <tbody>
               <tr>
-                <td>Cash in drawer should be (opening cash + cash collected)</td>
+                <td>Opening cash</td>
+                <td className="num">{report.cashReconciliation.openingCash.toLocaleString()} ETB</td>
+              </tr>
+              <tr>
+                <td>+ Cash collected</td>
+                <td className="num">{report.cashReconciliation.cashCollected.toLocaleString()} ETB</td>
+              </tr>
+              <tr className="total">
+                <td>= Cash in drawer should be</td>
                 <td className="num">
                   {report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB
                 </td>
@@ -715,8 +899,184 @@ export default function ZReport() {
           </div>
         </PrintSheet>
       )}
+
+      {payFor && (
+        <PayModal
+          booking={payFor.booking}
+          mode={payFor.mode}
+          onClose={() => setPayFor(null)}
+          onDone={async () => {
+            setPayFor(null);
+            await refreshAll();
+          }}
+        />
+      )}
+
+      {renameFor && (
+        <ChangeGuestModal
+          booking={renameFor}
+          onClose={() => setRenameFor(null)}
+          onDone={async () => {
+            setRenameFor(null);
+            await refreshAll();
+          }}
+        />
+      )}
+
+      {extendFor && (
+        <ExtendModal
+          booking={extendFor}
+          onClose={() => setExtendFor(null)}
+          onDone={async () => {
+            setExtendFor(null);
+            await refreshAll();
+          }}
+        />
+      )}
     </div>
   );
+}
+
+// A list of rooms for quick work. It shows on the screen only and never prints.
+function RoomsTable({
+  title,
+  hint,
+  empty,
+  bookings,
+  renderActions,
+}: {
+  title: string;
+  hint: string;
+  empty: string;
+  bookings: ShiftBooking[];
+  renderActions: (booking: ShiftBooking) => React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#1a231d]">
+      <h3 className="font-bold dark:text-white">
+        {title} <span className="text-sm font-normal text-gray-400">({bookings.length})</span>
+      </h3>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{hint}</p>
+
+      {bookings.length === 0 ? (
+        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">{empty}</p>
+      ) : (
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-175">
+            <thead>
+              <tr className="border-b border-gray-100 dark:border-white/10">
+                {["Guest", "Room", "Stay", "Balance", "Action"].map((heading) => (
+                  <th
+                    key={heading}
+                    className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {bookings.map((booking) => (
+                <tr key={booking.id} className="border-b border-gray-100 last:border-0 dark:border-white/5">
+                  <td className="px-3 py-4 text-sm dark:text-gray-200">
+                    <p className="font-medium dark:text-white">{booking.guest.fullName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{booking.bookingNumber}</p>
+                  </td>
+                  <td className="px-3 py-4 text-sm dark:text-gray-200">
+                    Room {booking.room.roomNumber}
+                    <span className="block text-xs text-gray-500 dark:text-gray-400">
+                      {booking.room.roomType.name}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
+                    {formatDay(booking.checkInDate)} to {formatDay(booking.checkOutDate)}
+                  </td>
+                  <td className="px-3 py-4 text-sm dark:text-gray-200">
+                    <span className="font-semibold">{Number(booking.balance).toLocaleString()} ETB</span>
+                    <span className="block text-xs text-gray-500 dark:text-gray-400">
+                      paid {Number(booking.amountPaid).toLocaleString()} of{" "}
+                      {Number(booking.totalAmount).toLocaleString()}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4">
+                    <div className="flex flex-wrap gap-2">{renderActions(booking)}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The cashier chooses the payment method here. The room then moves on.
+function PayModal({
+  booking,
+  mode,
+  onClose,
+  onDone,
+}: {
+  booking: ShiftBooking;
+  mode: "checkin" | "checkout";
+  onClose: () => void;
+  onDone: () => Promise<void>;
+}) {
+  const status = mode === "checkin" ? "CHECKED_IN" : "CHECKED_OUT";
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/40 p-5 backdrop-blur-sm">
+      <div className="my-5 w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-xl font-bold">
+              {mode === "checkin" ? "Payment before check-in" : "Pay the balance before check-out"}
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {booking.guest.fullName} · Room {booking.room.roomNumber} · {booking.bookingNumber}
+            </p>
+            <p className="mt-1 text-sm text-gray-500">
+              Balance {Number(booking.balance).toLocaleString()} ETB of{" "}
+              {Number(booking.totalAmount).toLocaleString()} ETB
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+          >
+            <XCircle size={21} />
+          </button>
+        </div>
+
+        <div className="mt-5">
+          <RecordPayment
+            bookingId={booking.id}
+            defaultAmount={Number(booking.balance)}
+            submitLabel={mode === "checkin" ? "Record payment and check in" : "Record payment and check out"}
+            onRecorded={async () => {
+              try {
+                await api.patch(`/bookings/${booking.id}/status`, { status });
+              } finally {
+                await onDone();
+              }
+            }}
+          />
+        </div>
+
+        <p className="mt-3 text-xs text-gray-500">
+          The payment joins the open shift of the person who records it. It shows under Payments This
+          Shift.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function formatDay(date: string) {
+  return new Date(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
 function SummaryCard({

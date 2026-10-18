@@ -421,6 +421,97 @@ router.post("/:id/cancel", canManageBookings, async (req: AuthRequest, res, next
   }
 });
 
+const extendSchema = z.object({ days: z.coerce.number().int().min(1).max(60) });
+
+// Add days to a stay. The price per night stays the same. The total and the balance grow.
+router.patch("/:id/extend", canManageBookings, async (req: AuthRequest, res, next) => {
+  try {
+    const { days } = extendSchema.parse(req.body);
+    const id = paramId(req);
+
+    const booking = await prisma.booking.findUniqueOrThrow({
+      where: { id },
+      include: { guest: true, room: true },
+    });
+
+    if (!["PENDING", "CONFIRMED", "CHECKED_IN"].includes(booking.status)) {
+      return res.status(409).json({
+        success: false,
+        message: "Only an active booking can be extended.",
+      });
+    }
+
+    const oldCheckOut = booking.checkOutDate;
+    const newCheckOut = new Date(oldCheckOut.getTime() + days * 24 * 60 * 60 * 1000);
+
+    // The room must be free for the extra days.
+    const clash = await prisma.booking.findFirst({
+      where: {
+        roomId: booking.roomId,
+        id: { not: id },
+        status: { in: ["PENDING", "CONFIRMED", "CHECKED_IN"] },
+        checkInDate: { lt: newCheckOut },
+        checkOutDate: { gt: oldCheckOut },
+      },
+      include: { guest: { select: { fullName: true } } },
+      orderBy: { checkInDate: "asc" },
+    });
+
+    if (clash) {
+      return res.status(409).json({
+        success: false,
+        message: `Room ${booking.room.roomNumber} is already booked from ${clash.checkInDate
+          .toISOString()
+          .slice(0, 10)} for ${clash.guest.fullName}. Extend by fewer days or move the guest.`,
+      });
+    }
+
+    const nights = nightsBetween(booking.checkInDate, newCheckOut);
+    const pricePerNight = Number(booking.pricePerNight);
+    const subtotal = pricePerNight * nights;
+    const totalAmount =
+      subtotal - Number(booking.discount) + Number(booking.tax) + Number(booking.additionalFees);
+    const amountPaid = Number(booking.amountPaid);
+
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const result = await tx.booking.update({
+        where: { id },
+        data: {
+          checkOutDate: newCheckOut,
+          nights,
+          subtotal,
+          totalAmount,
+          balance: totalAmount - amountPaid,
+          paymentStatus: derivePaymentStatus(amountPaid, totalAmount),
+        },
+        include: includeRelations,
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "BOOKING_EXTENDED",
+          entity: "Booking",
+          entityId: id,
+          userId: req.user!.id,
+          details: JSON.stringify({
+            bookingNumber: booking.bookingNumber,
+            days,
+            from: oldCheckOut.toISOString().slice(0, 10),
+            to: newCheckOut.toISOString().slice(0, 10),
+            extra: pricePerNight * days,
+          }),
+        },
+      });
+
+      return result;
+    });
+
+    res.json({ success: true, booking: updated });
+  } catch (e) {
+    next(e);
+  }
+});
+
 const guestChangeSchema = z.object({
   guestId: z.string().min(1).optional(),
   fullName: z.string().trim().min(2).max(80).optional(),

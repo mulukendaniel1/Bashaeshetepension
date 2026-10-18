@@ -93,6 +93,79 @@ router.get("/shift/:id", async (req: AuthRequest, res, next) => {
   }
 });
 
+// Reserved and booked rooms of a shift. The Z Report page lists them for quick work
+// (check-in, check-out, rename, cancel). They are not part of the printed report.
+router.get("/shift/:id/rooms", async (req: AuthRequest, res, next) => {
+  try {
+    const id = paramId(req);
+
+    const shift = await prisma.shift.findUniqueOrThrow({ where: { id } });
+    const isPrivileged =
+      req.user?.role === UserRole.OWNER ||
+      req.user?.role === UserRole.MANAGER ||
+      req.user?.role === UserRole.ACCOUNTANT;
+
+    if (!isPrivileged && shift.userId !== req.user?.id) {
+      return res.status(403).json({ success: false, message: "You can only view your own shift reports." });
+    }
+
+    const from = shift.openedAt;
+    const to = shift.closedAt ?? new Date();
+    const isOpen = shift.status === "OPEN";
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    // Bookings that took a payment in this shift.
+    const paidInShift = await prisma.payment.findMany({
+      where: { shiftId: id },
+      select: { bookingId: true },
+      distinct: ["bookingId"],
+    });
+
+    const include = {
+      guest: { select: { id: true, fullName: true, phone: true } },
+      room: { select: { id: true, roomNumber: true, roomType: { select: { name: true } } } },
+    };
+
+    // Reserved: made during the shift. In an open shift, arrivals due today count too.
+    const reserved = await prisma.booking.findMany({
+      where: {
+        status: { in: ["PENDING", "CONFIRMED"] },
+        OR: [
+          { createdAt: { gte: from, lte: to } },
+          ...(isOpen ? [{ checkInDate: { lte: endOfToday } }] : []),
+        ],
+      },
+      include,
+      orderBy: { checkInDate: "asc" },
+    });
+
+    // Booked: guests in the room. Made or paid in this shift. In an open shift,
+    // guests who leave today count too.
+    const booked = await prisma.booking.findMany({
+      where: {
+        status: "CHECKED_IN",
+        OR: [
+          { createdAt: { gte: from, lte: to } },
+          { id: { in: paidInShift.map((payment) => payment.bookingId) } },
+          ...(isOpen ? [{ checkOutDate: { lte: endOfToday } }] : []),
+        ],
+      },
+      include,
+      orderBy: { checkInDate: "asc" },
+    });
+
+    res.json({
+      success: true,
+      reserved: serializeDecimals(reserved),
+      booked: serializeDecimals(booked),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Owner/Manager/Accountant: every shift within a date range, each with its
 // own totals, for a daily or weekly rollup view.
 router.get("/range", canViewAnyShift, async (req, res, next) => {
