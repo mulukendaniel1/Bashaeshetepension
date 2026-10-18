@@ -166,6 +166,15 @@ export default function ZReport() {
     return Array.from(totals.entries());
   }, [report]);
 
+  // Money that did not enter the drawer: CBE Birr, Telebirr, bank transfers, cards.
+  const transfersTotal = report ? report.totalCollected - report.cashReconciliation.cashCollected : 0;
+
+  // Opening cash + cash collected + transfers.
+  const grandTotal = report ? report.cashReconciliation.openingCash + report.totalCollected : 0;
+
+  const transferMethodEntries = methodEntries.filter(([method]) => method !== "CASH");
+  const transferReceivedEntries = receivedByEntries.filter(([label]) => label !== "Cash");
+
   const bankAccountEntries = useMemo(() => {
     if (!report) return [];
     return Object.entries(report.totalsByBankAccount);
@@ -319,8 +328,8 @@ export default function ZReport() {
             />
 
             <SummaryCard
-              title="Total Cash (opening + cash collected)"
-              value={`${report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB`}
+              title="Total Money (opening + cash + transfers)"
+              value={`${grandTotal.toLocaleString()} ETB`}
               icon={<Calculator size={20} />}
             />
           </div>
@@ -368,14 +377,13 @@ export default function ZReport() {
           )}
 
           <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#1a231d]">
-            <h3 className="mb-5 font-bold dark:text-white">Cash Reconciliation</h3>
+            <h3 className="mb-5 font-bold dark:text-white">Total Money</h3>
 
             <p className="-mt-3 mb-5 text-sm text-gray-500 dark:text-gray-400">
-              Total cash = opening cash + cash collected. Compare it with the cash you count when the
-              shift closes.
+              Total = opening cash + cash collected + transfers (CBE Birr, Telebirr, bank).
             </p>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <ReconciliationItem
                 label="Opening Cash"
                 value={`${report.cashReconciliation.openingCash.toLocaleString()} ETB`}
@@ -385,23 +393,50 @@ export default function ZReport() {
                 value={`${report.cashReconciliation.cashCollected.toLocaleString()} ETB`}
               />
               <ReconciliationItem
-                label="= Total Cash"
+                label="+ Transfers"
+                value={`${transfersTotal.toLocaleString()} ETB`}
+              />
+              <ReconciliationItem label="= Total Money" value={`${grandTotal.toLocaleString()} ETB`} />
+            </div>
+
+            {transferMethodEntries.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-x-8 gap-y-2 border-t border-gray-100 pt-4 text-sm dark:border-white/10">
+                {transferMethodEntries.map(([method, amount]) => (
+                  <span key={method} className="text-gray-600 dark:text-gray-300">
+                    {methodLabels[method]}:{" "}
+                    <span className="font-semibold dark:text-white">{amount.toLocaleString()} ETB</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#1a231d]">
+            <h3 className="mb-5 font-bold dark:text-white">Cash Drawer Check</h3>
+
+            <p className="-mt-3 mb-5 text-sm text-gray-500 dark:text-gray-400">
+              Only cash enters the drawer. The drawer should hold opening cash + cash collected.
+              Transfers are not part of this check.
+            </p>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <ReconciliationItem
+                label="Cash in drawer should be"
                 value={`${report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB`}
               />
 
-              {report.cashReconciliation.actualClosingCash !== null && (
-                <ReconciliationItem
-                  label="Counted Closing Cash"
-                  value={`${report.cashReconciliation.actualClosingCash.toLocaleString()} ETB`}
-                />
-              )}
-
               {report.cashReconciliation.actualClosingCash !== null ? (
-                <ReconciliationItem
-                  label="Variance"
-                  value={`${report.cashReconciliation.variance! >= 0 ? "+" : ""}${report.cashReconciliation.variance!.toLocaleString()} ETB`}
-                  warn={report.cashReconciliation.variance !== 0}
-                />
+                <>
+                  <ReconciliationItem
+                    label="Counted Closing Cash"
+                    value={`${report.cashReconciliation.actualClosingCash.toLocaleString()} ETB`}
+                  />
+                  <ReconciliationItem
+                    label="Variance"
+                    value={`${report.cashReconciliation.variance! >= 0 ? "+" : ""}${report.cashReconciliation.variance!.toLocaleString()} ETB`}
+                    warn={report.cashReconciliation.variance !== 0}
+                  />
+                </>
               ) : (
                 <ReconciliationItem label="Variance" value="Shift still open" />
               )}
@@ -526,8 +561,8 @@ export default function ZReport() {
               <strong>{report.cashReconciliation.openingCash.toLocaleString()} ETB</strong>
             </div>
             <div className="a4-card">
-              <span>Total Cash</span>
-              <strong>{report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB</strong>
+              <span>Total Money</span>
+              <strong>{grandTotal.toLocaleString()} ETB</strong>
             </div>
           </div>
 
@@ -567,7 +602,7 @@ export default function ZReport() {
             </tbody>
           </table>
 
-          <p className="a4-section">Cash reconciliation</p>
+          <p className="a4-section">Total money</p>
 
           <table className="a4-table">
             <tbody>
@@ -576,12 +611,40 @@ export default function ZReport() {
                 <td className="num">{report.cashReconciliation.openingCash.toLocaleString()} ETB</td>
               </tr>
               <tr>
-                <td>+ Cash collected (cash payments of this shift)</td>
+                <td>+ Cash collected</td>
                 <td className="num">{report.cashReconciliation.cashCollected.toLocaleString()} ETB</td>
               </tr>
+
+              {transferReceivedEntries.length === 0 && (
+                <tr>
+                  <td>+ Transfers</td>
+                  <td className="num">0 ETB</td>
+                </tr>
+              )}
+
+              {transferReceivedEntries.map(([label, total]) => (
+                <tr key={label}>
+                  <td>+ Transfers to {label}</td>
+                  <td className="num">{total.amount.toLocaleString()} ETB</td>
+                </tr>
+              ))}
+
               <tr className="total">
-                <td>= Total cash (opening cash + cash collected)</td>
-                <td className="num">{report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB</td>
+                <td>= Total money (opening cash + cash + transfers)</td>
+                <td className="num">{grandTotal.toLocaleString()} ETB</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p className="a4-section">Cash drawer check</p>
+
+          <table className="a4-table">
+            <tbody>
+              <tr>
+                <td>Cash in drawer should be (opening cash + cash collected)</td>
+                <td className="num">
+                  {report.cashReconciliation.expectedClosingCash.toLocaleString()} ETB
+                </td>
               </tr>
 
               {report.cashReconciliation.actualClosingCash !== null ? (

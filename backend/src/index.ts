@@ -24,6 +24,7 @@ import settingsRoutes from "./routes/settings";
 import shiftsRoutes from "./routes/shifts";
 import zreportRoutes from "./routes/zreport";
 import bankAccountsRoutes from "./routes/bankAccounts";
+import { startCleaningRelease } from "./utils/Roomcleaning";
 import smsBridgeRoutes from "./routes/smsBridge";
 import publicRoutes from "./routes/public";
 import bookingRequestsRoutes from "./routes/bookingRequests";
@@ -144,4 +145,9 @@ app.use(
   }
 );
 
-app.listen(port, () => console.log(`Basha Eshete API listening on http://localhost:${port}`));
+app.listen(port, () => {
+  console.log(`Basha Eshete API listening on http://localhost:${port}`);
+
+  // Rooms in Cleaning return to Available after 30 minutes.
+  startCleaningRelease();
+});

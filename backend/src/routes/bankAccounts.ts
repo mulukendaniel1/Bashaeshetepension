@@ -63,7 +63,30 @@ router.patch("/:id", canManage, async (req, res, next) => {
 
 router.delete("/:id", canManage, async (req, res, next) => {
   try {
-    await prisma.bankAccount.delete({ where: { id: paramId(req) } });
+    const id = paramId(req);
+
+    await prisma.bankAccount.findUniqueOrThrow({ where: { id } });
+
+    // An account that received money keeps its history. Deleting it would break the
+    // payments, the Z Reports and the bank SMS records that point to it.
+    const [payments, transactions] = await Promise.all([
+      prisma.payment.count({ where: { bankAccountId: id } }),
+      prisma.bankTransaction.count({ where: { bankAccountId: id } }),
+    ]);
+
+    if (payments > 0 || transactions > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `This account has ${payments} payment${payments === 1 ? "" : "s"} and ${transactions} bank SMS record${transactions === 1 ? "" : "s"}. Deleting it would break your reports. Use the power button to switch it off instead.`,
+      });
+    }
+
+    // An unused account goes together with its SMS rules.
+    await prisma.$transaction([
+      prisma.bankSmsRule.deleteMany({ where: { bankAccountId: id } }),
+      prisma.bankAccount.delete({ where: { id } }),
+    ]);
+
     res.json({ success: true });
   } catch (e) {
     next(e);

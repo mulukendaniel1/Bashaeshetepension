@@ -1,11 +1,14 @@
 import { Router } from "express";
 import { prisma } from "../../prisma";
 import { requireAuth } from "../middleware/auth";
+import { releaseCleaningRooms } from "../utils/Roomcleaning";
 
 const router = Router();
 router.use(requireAuth);
 router.get("/summary", async (_req, res, next) => {
   try {
+    await releaseCleaningRooms();
+
     const [rooms, guests, bookings, revenue] = await Promise.all([
       prisma.room.count(),
       prisma.guest.count(),

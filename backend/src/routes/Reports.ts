@@ -40,6 +40,7 @@ router.get(
           id: `payment-${payment.id}`,
           category: "Room Bookings",
           type: "Revenue" as const,
+          method: payment.method,
           amount: Number(payment.amount),
           date: toISODate(payment.createdAt),
         })),

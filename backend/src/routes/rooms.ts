@@ -4,6 +4,7 @@ import { prisma } from "../../prisma";
 import { serializeDecimals } from "../utils/decimal";
 import { requireAuth, requireRoles } from "../middleware/auth";
 import { UserRole } from "../generated/prisma/enums";
+import { releaseCleaningRooms } from "../utils/Roomcleaning";
 
 const router = Router();
 router.use(requireAuth);
@@ -22,6 +23,9 @@ const canManageRooms = requireRoles(
 
 router.get("/", async (_req, res, next) => {
   try {
+    // Rooms whose cleaning time ended go back to Available before the list is sent.
+    await releaseCleaningRooms();
+
     const rooms = await prisma.room.findMany({ include: { roomType: true }, orderBy: { roomNumber: "asc" } });
     res.json({ success: true, rooms: serializeDecimals(rooms) });
   } catch (e) { next(e); }

@@ -36,8 +36,18 @@ type ReportRow = {
   id: string;
   category: string;
   type: "Revenue" | "Expense";
+  method?: string;
   amount: number;
   date: string; // YYYY-MM-DD
+};
+
+const methodLabels: Record<string, string> = {
+  CASH: "Cash",
+  TELEBIRR: "Telebirr",
+  CBE_BIRR: "CBE Birr",
+  BANK_TRANSFER: "Bank Transfer",
+  CARD: "Card",
+  OTHER: "Other",
 };
 
 const typeStyles: Record<ReportRow["type"], string> = {
@@ -190,6 +200,23 @@ export default function Reports() {
     .reduce((sum, row) => sum + row.amount, 0);
 
   const netProfit = totalRevenue - totalExpenses;
+
+  // Money received by method. Cash plus every transfer equals the total revenue.
+  const revenueByMethod = useMemo(() => {
+    const totals = new Map<string, number>();
+
+    for (const row of filteredRows) {
+      if (row.type !== "Revenue") continue;
+
+      const key = row.method || "OTHER";
+      totals.set(key, (totals.get(key) || 0) + row.amount);
+    }
+
+    return Array.from(totals.entries()).sort((a, b) => b[1] - a[1]);
+  }, [filteredRows]);
+
+  const cashRevenue = revenueByMethod.find(([method]) => method === "CASH")?.[1] || 0;
+  const transferRevenue = totalRevenue - cashRevenue;
 
   const profitMargin =
     totalRevenue === 0 ? 0 : Math.round((netProfit / totalRevenue) * 100);
@@ -432,6 +459,34 @@ export default function Reports() {
         />
       </div>
 
+      <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm print:hidden">
+        <h3 className="font-bold">Money received by method</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Cash + transfers (CBE Birr, Telebirr, bank, card) = total revenue.
+        </p>
+
+        {revenueByMethod.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-500">No payments in this period.</p>
+        ) : (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {revenueByMethod.map(([method, amount]) => (
+              <div key={method} className="rounded-xl border border-gray-100 p-4">
+                <p className="text-xs text-gray-400">{methodLabels[method] || method}</p>
+                <p className="mt-1 text-sm font-semibold">{amount.toLocaleString()} ETB</p>
+              </div>
+            ))}
+
+            <div className="rounded-xl bg-[#123c2c]/5 p-4">
+              <p className="text-xs text-gray-500">Cash + transfers</p>
+              <p className="mt-1 text-sm font-bold">
+                {cashRevenue.toLocaleString()} + {transferRevenue.toLocaleString()} ={" "}
+                {totalRevenue.toLocaleString()} ETB
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-175">
@@ -577,6 +632,37 @@ export default function Reports() {
             <strong>{profitMargin}%</strong>
           </div>
         </div>
+
+        <p className="a4-section">Money received by method</p>
+
+        <table className="a4-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th className="num">Amount (ETB)</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {revenueByMethod.length === 0 && (
+              <tr>
+                <td colSpan={2}>No payments in this period.</td>
+              </tr>
+            )}
+
+            {revenueByMethod.map(([method, amount]) => (
+              <tr key={method}>
+                <td>{methodLabels[method] || method}</td>
+                <td className="num">{amount.toLocaleString()}</td>
+              </tr>
+            ))}
+
+            <tr className="total">
+              <td>Cash {cashRevenue.toLocaleString()} + transfers {transferRevenue.toLocaleString()} = total revenue</td>
+              <td className="num">{totalRevenue.toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
 
         <p className="a4-section">Details</p>
 

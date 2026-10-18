@@ -133,12 +133,35 @@ export default function Bookings() {
   }, [bookings, search, statusFilter]);
 
   // Cancel keeps the booking in the list as Cancelled and frees the room.
-  const cancelBooking = async (id: string) => {
+  const cancelBooking = async (booking: Booking) => {
+    const paid = Number(booking.amountPaid);
+    let cancelPayments = false;
+
+    if (paid > 0) {
+      if (!canDelete) {
+        alert(
+          `This booking has ${paid.toLocaleString()} ETB in payments. Ask the owner or a manager to cancel it.`
+        );
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `This booking has ${paid.toLocaleString()} ETB in payments.\nCancelling it also cancels those payments and removes them from the Z Report.\nContinue?`
+      );
+
+      if (!confirmed) return;
+
+      cancelPayments = true;
+    }
+
     const reason = window.prompt("Cancel this booking? Write a short reason (you can leave it empty).");
     if (reason === null) return;
 
     try {
-      await api.post(`/bookings/${id}/cancel`, { reason: reason.trim() || undefined });
+      await api.post(`/bookings/${booking.id}/cancel`, {
+        reason: reason.trim() || undefined,
+        cancelPayments,
+      });
       await loadAll();
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Could not cancel booking.");
@@ -379,11 +402,12 @@ export default function Bookings() {
                         <div className="flex justify-end gap-2">
                           {canCancel(booking.status) && (
                             <button
-                              onClick={() => cancelBooking(booking.id)}
+                              onClick={() => cancelBooking(booking)}
                               title="Cancel booking"
-                              className="rounded-xl border border-amber-200 p-2.5 text-amber-600 transition hover:bg-amber-50"
+                              className="flex items-center gap-1.5 rounded-xl border border-amber-200 px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-50"
                             >
                               <XCircle size={16} />
+                              Cancel
                             </button>
                           )}
 
@@ -448,14 +472,14 @@ export default function Bookings() {
                   <div className="mt-5 flex gap-2 border-t border-gray-100 pt-4">
                     {canCancel(booking.status) && (
                       <button
-                        onClick={() => cancelBooking(booking.id)}
+                        onClick={() => cancelBooking(booking)}
                         className="flex-1 rounded-xl border border-amber-200 py-2.5 text-sm font-medium text-amber-600"
                       >
                         Cancel Booking
                       </button>
                     )}
 
-                    {canDelete && (booking.status as string) !== "CHECKED_IN" && (
+                     {canDelete && (booking.status as string) !== "CHECKED_IN" && (
                       <button
                         onClick={() => deleteBooking(booking.id)}
                         className="flex-1 rounded-xl border border-red-100 py-2.5 text-sm font-medium text-red-500"

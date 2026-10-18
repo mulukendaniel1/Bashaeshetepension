@@ -6,6 +6,7 @@ import { requireAuth, requireRoles, AuthRequest } from "../middleware/auth";
 
 import { UserRole } from "../generated/prisma/enums";
 import { tryMatchPayment } from "../utils/bankMatching";
+import { cancelPayment } from "../utils/Recordactions";
 
 const router = Router();
 router.use(requireAuth);
@@ -339,12 +340,16 @@ async function freeRoomIfUnused(tx: Prisma.TransactionClient, roomId: string, ex
   }
 }
 
-const cancelSchema = z.object({ reason: z.string().trim().max(200).optional() });
+const cancelSchema = z.object({
+  reason: z.string().trim().max(200).optional(),
+  // The owner or a manager may cancel the payments of the booking in the same step.
+  cancelPayments: z.boolean().optional(),
+});
 
 // Cancel a booking that has not checked in. The booking stays in the list as Cancelled.
 router.post("/:id/cancel", canManageBookings, async (req: AuthRequest, res, next) => {
   try {
-    const { reason } = cancelSchema.parse(req.body);
+    const { reason, cancelPayments } = cancelSchema.parse(req.body);
     const id = paramId(req);
 
     const booking = await prisma.booking.findUniqueOrThrow({ where: { id } });
@@ -357,10 +362,33 @@ router.post("/:id/cancel", canManageBookings, async (req: AuthRequest, res, next
     }
 
     if (Number(booking.amountPaid) > 0) {
-      return res.status(409).json({
-        success: false,
-        message: "This booking has payments. Cancel the payments first, then cancel the booking.",
+      if (!cancelPayments) {
+        return res.status(409).json({
+          success: false,
+          message: "This booking has payments. Cancel the payments first, then cancel the booking.",
+        });
+      }
+
+      if (req.user?.role !== "OWNER" && req.user?.role !== "MANAGER") {
+        return res.status(403).json({
+          success: false,
+          message: "Only the owner or a manager can cancel a booking that has payments.",
+        });
+      }
+
+      // Each payment leaves the shift totals and the Z Report. The audit log keeps the reason.
+      const payments = await prisma.payment.findMany({
+        where: { bookingId: id },
+        select: { id: true },
       });
+
+      for (const payment of payments) {
+        await cancelPayment(
+          payment.id,
+          req.user!.id,
+          `Booking ${booking.bookingNumber} cancelled${reason ? `: ${reason}` : ""}`
+        );
+      }
     }
 
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -388,6 +416,96 @@ router.post("/:id/cancel", canManageBookings, async (req: AuthRequest, res, next
     });
 
     res.json({ success: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+const guestChangeSchema = z.object({
+  guestId: z.string().min(1).optional(),
+  fullName: z.string().trim().min(2).max(80).optional(),
+  phone: z.string().trim().min(3).max(30).optional(),
+  email: z.string().trim().email().max(120).optional().or(z.literal("")),
+  nationality: z.string().trim().max(60).optional(),
+  idNumber: z.string().trim().max(40).optional(),
+});
+
+// Give a booking to another guest. Example: one person reserved three rooms,
+// then the real guests arrive. Each room goes to its own guest.
+router.patch("/:id/guest", canManageBookings, async (req: AuthRequest, res, next) => {
+  try {
+    const input = guestChangeSchema.parse(req.body);
+    const id = paramId(req);
+
+    const booking = await prisma.booking.findUniqueOrThrow({
+      where: { id },
+      include: { guest: true },
+    });
+
+    if (!["PENDING", "CONFIRMED", "CHECKED_IN"].includes(booking.status)) {
+      return res.status(409).json({
+        success: false,
+        message: "Only an active booking can change its guest.",
+      });
+    }
+
+    let guestId = input.guestId;
+
+    if (!guestId) {
+      if (!input.fullName || !input.phone) {
+        return res.status(400).json({
+          success: false,
+          message: "Choose a guest, or enter the full name and the phone number of a new guest.",
+        });
+      }
+
+      const created = await prisma.guest.create({
+        data: {
+          fullName: input.fullName,
+          phone: input.phone,
+          email: input.email || undefined,
+          nationality: input.nationality || undefined,
+          idNumber: input.idNumber || undefined,
+        },
+      });
+
+      guestId = created.id;
+    }
+
+    if (guestId === booking.guestId) {
+      return res.status(409).json({
+        success: false,
+        message: "This booking already belongs to that guest.",
+      });
+    }
+
+    const newGuest = await prisma.guest.findUniqueOrThrow({ where: { id: guestId } });
+
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const result = await tx.booking.update({
+        where: { id },
+        data: { guestId },
+        include: includeRelations,
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "BOOKING_GUEST_CHANGED",
+          entity: "Booking",
+          entityId: id,
+          userId: req.user!.id,
+          details: JSON.stringify({
+            bookingNumber: booking.bookingNumber,
+            from: booking.guest.fullName,
+            to: newGuest.fullName,
+          }),
+        },
+      });
+
+      return result;
+    });
+
+    res.json({ success: true, booking: updated });
   } catch (e) {
     next(e);
   }
